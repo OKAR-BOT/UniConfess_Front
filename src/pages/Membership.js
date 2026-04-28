@@ -1,78 +1,63 @@
-function Membership() {
+import { useState } from 'react';
 
-    return (
-        <div>
-            <div class="bg-gray-50 py-24 sm:py-32">
-                <div class="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
-                    <h2 class="text-center text-base/7 font-semibold text-indigo-600">Deploy faster</h2>
-                    <p class="mx-auto mt-2 max-w-lg text-center text-4xl font-semibold tracking-tight text-balance text-gray-950 sm:text-5xl">Everything you need to deploy your app</p>
-                    <div class="mt-10 grid gap-4 sm:mt-16 lg:grid-cols-3 lg:grid-rows-2">
-                        <div class="relative lg:row-span-2">
-                            <div class="absolute inset-px rounded-lg bg-white lg:rounded-l-4xl"></div>
-                            <div class="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] lg:rounded-l-[calc(2rem+1px)]">
-                                <div class="px-8 pt-8 pb-3 sm:px-10 sm:pt-10 sm:pb-0">
-                                    <p class="mt-2 text-lg font-medium tracking-tight text-gray-950 max-lg:text-center">Mobile friendly</p>
-                                    <p class="mt-2 max-w-lg text-sm/6 text-gray-600 max-lg:text-center">Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem cupidatat commodo.</p>
-                                </div>
-                                <div class="@container relative min-h-120 w-full grow max-lg:mx-auto max-lg:max-w-sm">
-                                    <div class="absolute inset-x-10 top-10 bottom-0 overflow-hidden rounded-t-[12cqw] border-x-[3cqw] border-t-[3cqw] border-gray-700 bg-gray-900 shadow-2xl">
-                                        <img src="https://tailwindcss.com/plus-assets/img/component-images/bento-03-mobile-friendly.png" alt="" class="size-full object-cover object-top" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="pointer-events-none absolute inset-px rounded-lg shadow-sm outline outline-black/5 lg:rounded-l-4xl"></div>
-                        </div>
-                        <div class="relative max-lg:row-start-1">
-                            <div class="absolute inset-px rounded-lg bg-white max-lg:rounded-t-4xl"></div>
-                            <div class="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] max-lg:rounded-t-[calc(2rem+1px)]">
-                                <div class="px-8 pt-8 sm:px-10 sm:pt-10">
-                                    <p class="mt-2 text-lg font-medium tracking-tight text-gray-950 max-lg:text-center">Performance</p>
-                                    <p class="mt-2 max-w-lg text-sm/6 text-gray-600 max-lg:text-center">Lorem ipsum, dolor sit amet consectetur adipisicing elit maiores impedit.</p>
-                                </div>
-                                <div class="flex flex-1 items-center justify-center px-8 max-lg:pt-10 max-lg:pb-12 sm:px-10 lg:pb-2">
-                                    <img src="https://tailwindcss.com/plus-assets/img/component-images/bento-03-performance.png" alt="" class="w-full max-lg:max-w-xs" />
-                                </div>
-                            </div>
-                            <div class="pointer-events-none absolute inset-px rounded-lg shadow-sm outline outline-black/5 max-lg:rounded-t-4xl"></div>
-                        </div>
-                        <div class="relative max-lg:row-start-3 lg:col-start-2 lg:row-start-2">
-                            <div class="absolute inset-px rounded-lg bg-white"></div>
-                            <div class="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)]">
-                                <div class="px-8 pt-8 sm:px-10 sm:pt-10">
-                                    <p class="mt-2 text-lg font-medium tracking-tight text-gray-950 max-lg:text-center">Security</p>
-                                    <p class="mt-2 max-w-lg text-sm/6 text-gray-600 max-lg:text-center">Morbi viverra dui mi arcu sed. Tellus semper adipiscing suspendisse semper morbi.</p>
-                                </div>
-                                <div class="@container flex flex-1 items-center max-lg:py-6 lg:pb-2">
-                                    <img src="https://tailwindcss.com/plus-assets/img/component-images/bento-03-security.png" alt="" class="h-[min(152px,40cqw)] object-cover" />
-                                </div>
-                            </div>
-                            <div class="pointer-events-none absolute inset-px rounded-lg shadow-sm outline outline-black/5"></div>
-                        </div>
-                        <div class="relative lg:row-span-2">
-                            <div class="absolute inset-px rounded-lg bg-white max-lg:rounded-b-4xl lg:rounded-r-4xl"></div>
-                            <div class="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] max-lg:rounded-b-[calc(2rem+1px)] lg:rounded-r-[calc(2rem+1px)]">
-                                <div class="px-8 pt-8 pb-3 sm:px-10 sm:pt-10 sm:pb-0">
-                                    <p class="mt-2 text-lg font-medium tracking-tight text-gray-950 max-lg:text-center">Powerful APIs</p>
-                                    <p class="mt-2 max-w-lg text-sm/6 text-gray-600 max-lg:text-center">Sit quis amet rutrum tellus ullamcorper ultricies libero dolor eget sem sodales gravida.</p>
-                                </div>
-                                <div class="relative min-h-120 w-full grow">
-                                    <div class="absolute top-10 right-0 bottom-0 left-10 overflow-hidden rounded-tl-xl bg-gray-900 shadow-2xl outline outline-white/10">
-                                        <div class="flex bg-gray-900 outline outline-white/5">
-                                            <div class="-mb-px flex text-sm/6 font-medium text-gray-400">
-                                                <div class="border-r border-b border-r-white/10 border-b-white/20 bg-white/5 px-4 py-2 text-white">NotificationSetting.jsx</div>
-                                                <div class="border-r border-gray-600/10 px-4 py-2">App.jsx</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="pointer-events-none absolute inset-px rounded-lg shadow-sm outline outline-black/5 max-lg:rounded-b-4xl lg:rounded-r-4xl"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+export default function PricingCards() {
+  const [selected, setSelected] = useState('anual', 'mensual');
 
-        </div>
-    );
+  return (
+    <div className="bg-gray-900 min-h-screen">
+    <div className="max-w-4xl mx-auto py-12 px-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+      
+      {/* Tarjeta Mensual */}
+      <div 
+        onClick={() => setSelected('mensual')}
+        className= {`transition-all duration-300 border-2 rounded-2xl p-8 flex flex-col cursor-pointer
+          ${selected === 'mensual' 
+            ? 'border-indigo-600 shadow-xl scale-105' 
+            : 'border-gray-200 opacity-60 hover:opacity-100'}`}
+      >
+        <h3 className="text-xl font-semibold text-white">Plan Mensual</h3>
+        <p className="mt-4 text-4xl font-bold text-white">S/9.99<span className="text-base font-normal text-white">/mes</span></p>
+        
+        <ul className="mt-6 space-y-4 text-white flex-grow">
+          <li>✅ Acceso total a contenido</li>
+          <li>✅ Navegación sin anuncios</li>
+          <li>✅ Soporte prioritario</li>
+          <li>✅ Flexibilidad total (cancela cuando quieras)</li>
+        </ul>
+
+        <a href="https://www.paypal.com/donate?hosted_button_id=5Z6K7X9Y8A1B2" target="_blank" rel="noopener noreferrer" className={`mt-8 block w-full py-3 rounded-lg font-semibold transition-colors text-center
+        ${selected === 'mensual' ? 'bg-indigo-600 text-white' : 'bg-gray-900 text-white'}`}>
+        Elegir Anual
+        </a>
+      </div>
+
+      {/* Tarjeta Anual */}
+      <div 
+        onClick={() => setSelected('anual')}
+        className={`transition-all duration-300 border-2 rounded-2xl p-8 flex flex-col relative cursor-pointer
+          ${selected === 'anual' 
+            ? 'border-indigo-600 shadow-xl scale-105' 
+            : 'border-gray-200 opacity-60 hover:opacity-100'}`}
+      >
+        <span className="absolute -top-3 left-4 bg-indigo-600 text-white text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">Más Popular</span>
+        <h3 className="text-xl font-semibold text-white">Plan Anual</h3>
+        <p className="mt-4 text-4xl font-bold text-white">S/89.99<span className="text-base font-normal text-white">/año</span></p>
+        <p className="text-indigo-600 text-sm font-medium mt-1">¡Ahorras un 25%!</p>
+        
+        <ul className="mt-6 space-y-4 text-white flex-grow">
+          <li>✅ Todo lo del plan mensual</li>
+          <li>✅ <b>Ahorro de S/30 USD anuales</b></li>
+          <li>✅ Acceso anticipado a funciones Beta</li>
+          <li>✅ Insignia exclusiva en tus confesiones</li>
+        </ul>
+
+        <a href="https://www.paypal.com/donate?hosted_button_id=5Z6K7X9Y8A1B2" target="_blank" rel="noopener noreferrer" className={`mt-8 block w-full py-3 rounded-lg font-semibold transition-colors text-center
+        ${selected === 'anual' ? 'bg-indigo-600 text-white' : 'bg-gray-900 text-white'}`}>
+        Elegir Anual
+        </a>
+      </div>
+
+    </div>
+    </div>
+  );
 }
-export default Membership;

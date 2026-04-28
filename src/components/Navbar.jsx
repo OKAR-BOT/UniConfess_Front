@@ -11,7 +11,7 @@ function Navbar() {
     };
 
     return (
-        <nav className='bg-gray-900 text-white border-b border-gray-800 px-6 py-4 font-sans'>
+        <nav className='bg-indigo-900 text-white border-b border-gray-800 px-6 py-4 font-sans'>
             <div className='flex items-center justify-between max-w-7xl mx-auto'>
                 <Link to="/">
                     <img width="120" src="https://tailwindcss.com/plus-assets/img/logos/158x48/transistor-logo-gray-900.svg" alt="Logo" className="invert opacity-80 hover:opacity-100 transition" />
