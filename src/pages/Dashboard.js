@@ -2,7 +2,15 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, isAuthReady } = useAuth();
+
+  if (!isAuthReady) {
+    return (
+      <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center bg-gray-950 text-sm text-gray-300">
+        Cargando sesi&oacute;n...
+      </div>
+    );
+  }
 
   if (!user) {
     return <Navigate to="/login" replace />;
