@@ -1,130 +1,89 @@
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function Home() {
-    return (
-      
-        <div class="bg-gray-900 py-24 sm:py-32">
-  <div class="mx-auto max-w-7xl px-6 lg:px-8">
-    <div class="mx-auto max-w-2xl text-center">
-      <h2 class="text-4xl font-semibold tracking-tight text-pretty text-white sm:text-5xl">UConfess</h2>
-      <p class="mt-2 text-lg/8 text-gray-300">Cuenta algo que solo tu sepas sin que nadie te juzgue</p>
-    </div>
-    <div class="mx-auto mt-10 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-16 border-t border-gray-700 pt-10 sm:mt-16 sm:pt-16 lg:mx-0 lg:max-w-none lg:grid-cols-3">
+  const { user } = useAuth();
 
-      <article class="flex max-w-xl flex-col items-center justify-between">
-        <div class="relative mt-8 flex items-center gap-x-4 ">
-          <img src="https://img.freepik.com/vector-premium/ilustracion-plana-vectorial-escala-grises-icono-perfil-usuario-avatar-persona-imagen-perfil-silueta-genero-neutral-apto-perfiles-redes-sociales-iconos-protectores-pantalla-como-plantillax9xa_719432-2210.jpg?semt=ais_hybrid&w=740&q=80" alt="" class="size-10 rounded-full bg-gray-800" />
-          <div class="text-sm/6">
-            <p class="font-semibold text-white">
-              <a href="#">
-                <span class="absolute inset-0"></span>
-                Michael Foster
-              </a>
-            </p>
-            <p class="text-gray-400">Co-Founder / CTO</p>
+  return (
+    <div className="min-h-screen bg-gray-900 font-sans text-white">
+      <section className="relative flex min-h-[calc(100vh-4.5rem)] flex-col justify-center overflow-hidden px-6 py-20">
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-indigo-950/50 via-gray-900 to-gray-900"
+          aria-hidden
+        />
+        <div className="relative mx-auto max-w-3xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">
+            Bienvenido a la comunidad
+          </p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">UConfess</h1>
+          <p className="mt-6 text-lg leading-relaxed text-gray-300 sm:text-xl">
+            El rincón de los estudiantes de la{' '}
+            <span className="font-medium text-white">Universidad Tecnológica del Perú</span> para
+            compartir confesiones, chismes de campus y vivencias universitarias con respeto.
+          </p>
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              to="/feed"
+              className="inline-flex w-full max-w-xs items-center justify-center rounded-lg bg-indigo-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-500 hover:scale-[1.02] sm:w-auto"
+            >
+              Entrar al feed
+            </Link>
+            {!user ? (
+              <Link
+                to="/register"
+                className="inline-flex w-full max-w-xs items-center justify-center rounded-lg border border-gray-600 px-8 py-3.5 text-sm font-semibold text-gray-200 transition hover:border-indigo-500 hover:text-white sm:w-auto"
+              >
+                Crear cuenta
+              </Link>
+            ) : (
+              <Link
+                to="/dashboard"
+                className="inline-flex w-full max-w-xs items-center justify-center rounded-lg border border-indigo-500/50 px-8 py-3.5 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-600/20 sm:w-auto"
+              >
+                Mi cuenta
+              </Link>
+            )}
           </div>
-        </div>
-        <div class="flex items-center gap-x-4 text-xs">
-          <time datetime="2020-03-16" class="text-gray-400">Mar 16, 2020</time>
-          <p class="relative z-10 rounded-full bg-gray-800/60 px-3 py-1.5 font-medium text-gray-300 ">Marketing</p>
-        </div>
-        <div class="group relative grow">
-          <h3 class="mt-3 text-lg/6 font-semibold text-white group-hover:text-gray-300">
-            <a href="#">
-              <span class="absolute inset-0"></span>
-              Boost your conversion rate
-            </a>
-          </h3>
-          <p class="mt-5 line-clamp-3 text-sm/6 text-gray-400">Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta.</p>
-        </div>
-      </article>
-
-      <article class="flex max-w-xl flex-col items-center justify-between">
-        <div class="relative mt-8 flex items-center gap-x-4 justify-self-end">
-          <img src="https://img.freepik.com/vector-premium/ilustracion-plana-vectorial-escala-grises-icono-perfil-usuario-avatar-persona-imagen-perfil-silueta-genero-neutral-apto-perfiles-redes-sociales-iconos-protectores-pantalla-como-plantillax9xa_719432-2210.jpg?semt=ais_hybrid&w=740&q=80" alt="" class="size-10 rounded-full bg-gray-800" />
-          <div class="text-sm/6">
-            <p class="font-semibold text-white">
-              <a href="#">
-                <span class="absolute inset-0"></span>
-                Lindsay Walton
-              </a>
+          {!user ? (
+            <p className="mt-6 text-sm text-gray-500">
+              ¿Ya tienes cuenta?{' '}
+              <Link to="/login" className="text-indigo-400 hover:underline">
+                Inicia sesión
+              </Link>
             </p>
-            <p class="text-gray-400">Front-end Developer</p>
-          </div>
+          ) : null}
         </div>
-        <div class="flex items-center gap-x-4 text-xs">
-          <time datetime="2020-03-10" class="text-gray-400">Mar 10, 2020</time>
-          <p class="relative z-10 rounded-full bg-gray-800/60 px-3 py-1.5 font-medium text-gray-300 ">Ing. Civil</p>
-        </div>
-        <div class="group relative grow">
-          <h3 class="mt-3 text-lg/6 font-semibold text-white group-hover:text-gray-300">
-            <a href="#">
-              <span class="absolute inset-0"></span>
-              How to use search engine optimization to drive sales
-            </a>
-          </h3>
-          <p class="mt-5 line-clamp-3 text-sm/6 text-gray-400">Optio cum necessitatibus dolor voluptatum provident commodi et. Qui aperiam fugiat nemo cumque.</p>
-        </div>
-      </article>
+      </section>
 
-      <article class="flex max-w-xl flex-col items-center justify-between">
-        <div class="relative mt-8 flex items-center gap-x-4 justify-self-end">
-          <img src="https://img.freepik.com/vector-premium/ilustracion-plana-vectorial-escala-grises-icono-perfil-usuario-avatar-persona-imagen-perfil-silueta-genero-neutral-apto-perfiles-redes-sociales-iconos-protectores-pantalla-como-plantillax9xa_719432-2210.jpg?semt=ais_hybrid&w=740&q=80" alt="" class="size-10 rounded-full bg-gray-800" />
-          <div class="text-sm/6">
-            <p class="font-semibold text-white">
-              <a href="#">
-                <span class="absolute inset-0"></span>
-                Tom Cook
-              </a>
+      <section className="border-t border-gray-800 bg-gray-950/40 px-6 py-16">
+        <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-3">
+          <article className="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 text-center">
+            <h2 className="text-lg font-semibold text-indigo-300">Publica</h2>
+            <p className="mt-2 text-sm text-gray-400">
+              Comparte con tu nombre y usuario de cuenta. Sin pseudónimos a elección.
             </p>
-            <p class="text-gray-400">Director of Product</p>
-          </div>
+          </article>
+          <article className="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 text-center">
+            <h2 className="text-lg font-semibold text-indigo-300">Interactúa</h2>
+            <p className="mt-2 text-sm text-gray-400">
+              Comenta, da me gusta y repostea publicaciones de la comunidad UTP.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-gray-800 bg-gray-900/80 p-6 text-center">
+            <h2 className="text-lg font-semibold text-indigo-300">Explora</h2>
+            <p className="mt-2 text-sm text-gray-400">
+              Desplázate por el feed de forma continua, como en una red social.
+            </p>
+          </article>
         </div>
-        <div class="flex items-center gap-x-4 text-xs">
-          <time datetime="2020-02-12" class="text-gray-400">Feb 12, 2020</time>
-          <p class="relative z-10 rounded-full bg-gray-800/60 px-3 py-1.5 font-medium text-gray-300 ">Psicologia</p>
-        </div>
-        <div class="group relative grow">
-          <h3 class="mt-3 text-lg/6 font-semibold text-white group-hover:text-gray-300">
-            <a href="#">
-              <span class="absolute inset-0"></span>
-              Improve your customer experience
-            </a>
-          </h3>
-          <p class="mt-5 line-clamp-3 text-sm/6 text-gray-400">Cupiditate maiores ullam eveniet adipisci in doloribus nulla minus. Voluptas iusto libero adipisci rem et corporis. Nostrud sint anim sunt aliqua. Nulla eu labore irure incididunt velit cillum quis magna dolore.</p>
-        </div>
-      </article>
+        <p className="mx-auto mt-12 max-w-xl text-center text-sm text-gray-500">
+          <Link to="/about" className="text-indigo-400 hover:underline">
+            Conoce más sobre el proyecto
+          </Link>
+        </p>
+      </section>
     </div>
-  </div>
-
-  <section>
-    
-<div class="m-12 max-w-md mx-auto p-8 bg-gray-900 rounded-2xl shadow-lg border border-gray-100">
-  <h2 class="text-xl font-bold text-gray-900 mb-6">Ajustes de entrada</h2>
-  
-  <form class="space-y-6">
-    <div>
-      <label for="small" class="block mb-2 text-sm font-semibold text-white">Nombre Anonimo</label>
-      <input type="text" id="small" class="bg-gray-900 border border-gray-300 text-white text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block w-full px-3 py-2 transition-all" placeholder="Texto pequeño" />
-    </div>
-
-    <div>
-      <label for="base" class="block mb-2 text-sm font-semibold text-white">Carrera</label>
-      <input type="text" id="base" class="bg-gray-900 border border-gray-300 text-white text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block w-full px-4 py-2.5 transition-all" placeholder="Texto base" />
-    </div>
-
-    <div>
-      <label for="xl" class="block mb-2 text-sm font-semibold text-white">Confesion</label>
-      <input type="text" id="xl" class="bg-gray-900 border border-gray-300 text-white text-base rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block w-full px-5 py-4 transition-all" placeholder="Texto extra grande" />
-    </div>
-
-    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg shadow-md transition-transform hover:scale-[1.02]">
-      Guardar cambios
-    </button>
-  </form>
-</div>
-
-  </section>
-</div>
-    );
+  );
 }
+
 export default Home;

@@ -1,29 +1,51 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function Dashboard() {
+  const { user } = useAuth();
 
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
+  return (
+    <div className="min-h-[calc(100vh-8rem)] bg-gray-950 px-4 py-10 text-white">
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-2xl border border-gray-800 bg-gray-900 p-8 shadow-xl">
+          <h1 className="text-3xl font-bold">Mi cuenta</h1>
+          <p className="mt-2 italic text-gray-400">
+            Sesión activa en UConfess. Tus publicaciones usan esta identidad.
+          </p>
 
-    return (
-        <div className="min-h-screen bg-gray-950 text-white p-10">
-            <div className="max-w-4xl mx-auto bg-gray-900 p-8 rounded-2xl border border-gray-800">
-                <h1 className="text-3xl font-bold mb-4"> Panel de Control</h1>
-                <p className="text-gray-400 italic">"Hola mundo", has entrado exitosamente.</p>
-                
-                <div className="mt-8 grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-800 rounded-lg">
-                        <p className="text-xs text-gray-500 uppercase tracking-widest">Estado</p>
-                        <p className="text-green-400 font-mono">Conectado</p>
-                    </div>
-                    <div className="p-4 bg-gray-800 rounded-lg">
-                        <p className="text-xs text-gray-500 uppercase tracking-widest">Rol</p>
-                        <p className="text-indigo-400 font-mono">Administrador</p>
-                    </div>
-                </div>
+          <dl className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-gray-700/50 bg-gray-800 p-4">
+              <dt className="text-xs uppercase tracking-widest text-gray-500">Nombre</dt>
+              <dd className="mt-1 font-medium text-white">{user.displayName}</dd>
             </div>
+            <div className="rounded-lg border border-gray-700/50 bg-gray-800 p-4">
+              <dt className="text-xs uppercase tracking-widest text-gray-500">Usuario</dt>
+              <dd className="mt-1 font-mono text-indigo-400">@{user.handle}</dd>
+            </div>
+            <div className="rounded-lg border border-gray-700/50 bg-gray-800 p-4 sm:col-span-2">
+              <dt className="text-xs uppercase tracking-widest text-gray-500">Correo</dt>
+              <dd className="mt-1 font-medium text-white">{user.email}</dd>
+            </div>
+            <div className="rounded-lg border border-gray-700/50 bg-gray-800 p-4 sm:col-span-2">
+              <dt className="text-xs uppercase tracking-widest text-gray-500">Carrera</dt>
+              <dd className="mt-1 font-medium text-white">{user.career}</dd>
+            </div>
+          </dl>
+
+          <Link
+            to="/feed"
+            className="mt-10 inline-flex rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500"
+          >
+            Ir al feed
+          </Link>
         </div>
-    );
+      </div>
+    </div>
+  );
 }
 
 export default Dashboard;

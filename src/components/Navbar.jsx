@@ -1,43 +1,64 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
-    const navigate = useNavigate();
-    
-    const isAuth = localStorage.getItem('isAuthenticated') === 'true';
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-    const handleLogout = () => {
-        localStorage.removeItem('isAuthenticated');
-        navigate('/login');
-    };
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
-    return (
-        <nav className='bg-indigo-900 text-white border-b border-gray-800 px-6 py-4 font-sans'>
-            <div className='flex items-center justify-between max-w-7xl mx-auto'>
-                <Link to="/">
-                    <img width="120" src="https://tailwindcss.com/plus-assets/img/logos/158x48/transistor-logo-gray-900.svg" alt="Logo" className="invert opacity-80 hover:opacity-100 transition" />
-                </Link>
+  return (
+    <nav className="sticky top-0 z-50 border-b border-gray-800 bg-indigo-900 px-6 py-4 font-sans text-white">
+      <div className="mx-auto flex max-w-7xl items-center justify-between">
+        <Link to="/" className="text-xl font-bold tracking-wide hover:text-indigo-200">
+          UConfess
+        </Link>
 
-                <div className='flex gap-6 items-center text-sm font-medium'>
-                    <Link to="/" className="hover:text-indigo-400">Inicio</Link>
-                    <Link to="/membership" className="hover:text-indigo-400">Membresía</Link>
-                    
-                    {isAuth ? (
-                        <>
-                            <Link to="/dashboard" className="text-indigo-400 font-bold">Dashboard</Link>
-                            <button 
-                                onClick={handleLogout}
-                                className="bg-red-500/10 text-red-500 px-3 py-1 rounded border border-red-500/20 hover:bg-red-500 hover:text-white transition"
-                            >
-                                Salir
-                            </button>
-                        </>
-                    ) : (
-                        <Link to="/login" className="bg-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-500 transition">Login</Link>
-                    )}
-                </div>
-            </div>
-        </nav>
-    );
+        <div className="flex flex-wrap items-center gap-5 text-sm font-medium">
+          <Link to="/" className="hover:text-indigo-300">
+            Inicio
+          </Link>
+          <Link to="/feed" className="hover:text-indigo-300">
+            Feed
+          </Link>
+          <Link to="/about" className="hover:text-indigo-300">
+            About us
+          </Link>
+          <Link to="/membership" className="hover:text-indigo-300">
+            Membresía
+          </Link>
+
+          {user ? (
+            <>
+              <span className="hidden max-w-[120px] truncate text-indigo-200 sm:inline">
+                @{user.handle}
+              </span>
+              <Link to="/dashboard" className="font-semibold text-indigo-300 hover:text-white">
+                Mi cuenta
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded border border-red-500/30 bg-red-500/10 px-3 py-1 text-red-300 transition hover:bg-red-500 hover:text-white"
+              >
+                Salir
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              className="rounded-lg bg-indigo-600 px-4 py-2 transition hover:bg-indigo-500"
+            >
+              Login
+            </Link>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
 }
 
 export default Navbar;
