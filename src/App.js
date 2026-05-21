@@ -10,6 +10,7 @@ import Membership from './pages/Membership';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import NotFound from './pages/NotFound';
 
 function AppRoutes() {
   const location = useLocation();
@@ -30,6 +31,7 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
 
       {showFooter ? <Footer /> : null}

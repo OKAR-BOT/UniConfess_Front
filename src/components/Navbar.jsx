@@ -75,6 +75,7 @@ function Navbar() {
             Membresía
           </Link>
 
+
           {user ? (
             <>
               <span className="hidden max-w-[120px] truncate text-indigo-200 sm:inline">
