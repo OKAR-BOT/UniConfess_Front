@@ -6,35 +6,7 @@
     --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
-<<<<<<< Updated upstream:src/index.css
-    --color-red-200: oklch(88.5% 0.062 18.334);
-    --color-red-300: oklch(80.8% 0.114 19.571);
-    --color-red-400: oklch(70.4% 0.191 22.216);
-    --color-red-500: oklch(63.7% 0.237 25.331);
-    --color-red-950: oklch(25.8% 0.092 26.042);
-    --color-amber-100: oklch(96.2% 0.059 95.617);
-    --color-amber-200: oklch(92.4% 0.12 95.746);
-    --color-amber-500: oklch(76.9% 0.188 70.08);
-    --color-amber-900: oklch(41.4% 0.112 45.904);
-    --color-amber-950: oklch(27.9% 0.077 45.635);
-    --color-emerald-400: oklch(76.5% 0.177 163.223);
-    --color-emerald-500: oklch(69.6% 0.17 162.48);
-    --color-sky-400: oklch(74.6% 0.16 232.661);
-    --color-sky-500: oklch(68.5% 0.169 237.323);
-    --color-sky-600: oklch(58.8% 0.158 241.966);
-    --color-indigo-100: oklch(93% 0.034 272.788);
-    --color-indigo-200: oklch(87% 0.065 274.039);
-    --color-indigo-300: oklch(78.5% 0.115 274.713);
-    --color-indigo-400: oklch(67.3% 0.182 276.935);
-    --color-indigo-500: oklch(58.5% 0.233 277.117);
     --color-indigo-600: oklch(51.1% 0.262 276.966);
-    --color-indigo-900: oklch(35.9% 0.144 278.697);
-    --color-indigo-950: oklch(25.7% 0.09 281.288);
-    --color-pink-400: oklch(71.8% 0.202 349.761);
-    --color-pink-500: oklch(65.6% 0.241 354.308);
-=======
-    --color-indigo-600: oklch(51.1% 0.262 276.966);
->>>>>>> Stashed changes:Fronted/src/index.css
     --color-gray-100: oklch(96.7% 0.003 264.542);
     --color-gray-200: oklch(92.8% 0.006 264.531);
     --color-gray-300: oklch(87.2% 0.01 258.338);
@@ -43,11 +15,6 @@
     --color-gray-600: oklch(44.6% 0.03 256.802);
     --color-gray-800: oklch(27.8% 0.033 256.848);
     --color-gray-900: oklch(21% 0.034 264.665);
-<<<<<<< Updated upstream:src/index.css
-    --color-gray-950: oklch(13% 0.028 261.692);
-    --color-black: #000;
-=======
->>>>>>> Stashed changes:Fronted/src/index.css
     --color-white: #fff;
     --spacing: 0.25rem;
     --container-xs: 20rem;
@@ -90,15 +57,8 @@
     --tracking-wide: 0.025em;
     --tracking-wider: 0.05em;
     --tracking-widest: 0.1em;
-<<<<<<< Updated upstream:src/index.css
-    --leading-snug: 1.375;
-    --leading-relaxed: 1.625;
-    --radius-md: 0.375rem;
-    --radius-lg: 0.5rem;
-=======
     --leading-tight: 1.25;
     --leading-relaxed: 1.625;
->>>>>>> Stashed changes:Fronted/src/index.css
     --radius-xl: 0.75rem;
     --radius-2xl: 1rem;
     --radius-3xl: 1.5rem;
@@ -271,6 +231,9 @@
   .pointer-events-none {
     pointer-events: none;
   }
+  .visible {
+    visibility: visible;
+  }
   .absolute {
     position: absolute;
   }
@@ -280,15 +243,9 @@
   .sticky {
     position: sticky;
   }
-<<<<<<< Updated upstream:src/index.css
-  .inset-0 {
-    inset: calc(var(--spacing) * 0);
-  }
   .start {
     inset-inline-start: var(--spacing);
   }
-=======
->>>>>>> Stashed changes:Fronted/src/index.css
   .-top-3 {
     top: calc(var(--spacing) * -3);
   }
@@ -839,8 +796,6 @@
     font-size: var(--text-4xl);
     line-height: var(--tw-leading, var(--text-4xl--line-height));
   }
-<<<<<<< Updated upstream:src/index.css
-=======
   .text-5xl {
     font-size: var(--text-5xl);
     line-height: var(--tw-leading, var(--text-5xl--line-height));
@@ -849,7 +804,6 @@
     font-size: var(--text-7xl);
     line-height: var(--tw-leading, var(--text-7xl--line-height));
   }
->>>>>>> Stashed changes:Fronted/src/index.css
   .text-base {
     font-size: var(--text-base);
     line-height: var(--tw-leading, var(--text-base--line-height));
@@ -961,27 +915,6 @@
       color: color-mix(in oklab, var(--color-utp-red) 80%, transparent);
     }
   }
-<<<<<<< Updated upstream:src/index.css
-  .text-indigo-400 {
-    color: var(--color-indigo-400);
-  }
-  .text-pink-400 {
-    color: var(--color-pink-400);
-  }
-  .text-red-200 {
-    color: var(--color-red-200);
-  }
-  .text-red-300 {
-    color: var(--color-red-300);
-  }
-  .text-red-400 {
-    color: var(--color-red-400);
-  }
-  .text-red-500 {
-    color: var(--color-red-500);
-  }
-=======
->>>>>>> Stashed changes:Fronted/src/index.css
   .text-white {
     color: var(--color-white);
   }
@@ -1040,18 +973,8 @@
     --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
-<<<<<<< Updated upstream:src/index.css
-  .ring-gray-800 {
-    --tw-ring-color: var(--color-gray-800);
-  }
-  .backdrop-blur-md {
-    --tw-backdrop-blur: blur(var(--blur-md));
-    -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
-    backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
-=======
   .ring-utp-red {
     --tw-ring-color: var(--color-utp-red);
->>>>>>> Stashed changes:Fronted/src/index.css
   }
   .backdrop-blur-sm {
     --tw-backdrop-blur: blur(var(--blur-sm));
@@ -1311,9 +1234,6 @@
       line-height: var(--tw-leading, var(--text-4xl--line-height));
     }
   }
-<<<<<<< Updated upstream:src/index.css
-  .sm\:text-6xl {
-=======
   .sm\:text-5xl {
     @media (width >= 40rem) {
       font-size: var(--text-5xl);
@@ -1321,7 +1241,6 @@
     }
   }
   .sm\:text-7xl {
->>>>>>> Stashed changes:Fronted/src/index.css
     @media (width >= 40rem) {
       font-size: var(--text-7xl);
       line-height: var(--tw-leading, var(--text-7xl--line-height));
@@ -2211,8 +2130,6 @@
   syntax: "*";
   inherits: false;
 }
-<<<<<<< Updated upstream:src/index.css
-=======
 @property --tw-scale-x {
   syntax: "*";
   inherits: false;
@@ -2281,7 +2198,6 @@
   syntax: "*";
   inherits: false;
 }
->>>>>>> Stashed changes:Fronted/src/index.css
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -2329,8 +2245,6 @@
       --tw-backdrop-saturate: initial;
       --tw-backdrop-sepia: initial;
       --tw-duration: initial;
-<<<<<<< Updated upstream:src/index.css
-=======
       --tw-scale-x: 1;
       --tw-scale-y: 1;
       --tw-scale-z: 1;
@@ -2347,7 +2261,6 @@
       --tw-drop-shadow-color: initial;
       --tw-drop-shadow-alpha: 100%;
       --tw-drop-shadow-size: initial;
->>>>>>> Stashed changes:Fronted/src/index.css
     }
   }
 }
