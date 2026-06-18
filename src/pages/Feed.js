@@ -2,7 +2,7 @@ import ConfessionsSection from '../components/ConfessionsSection';
 
 function Feed() {
   return (
-    <main className="min-h-screen bg-gray-900 font-sans text-white">
+    <main className="page-shell">
       <ConfessionsSection variant="feed" />
     </main>
   );

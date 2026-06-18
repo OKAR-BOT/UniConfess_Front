@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Home from './pages/Home';
 import Feed from './pages/Feed';
 import About from './pages/About';
@@ -10,6 +11,7 @@ import Membership from './pages/Membership';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import NotFound from './pages/NotFound';
 
 function AppRoutes() {
   const location = useLocation();
@@ -17,9 +19,7 @@ function AppRoutes() {
   const showFooter = !isFeed;
 
   return (
-    <div
-      className={`App flex min-h-screen flex-col bg-gray-900 ${isFeed ? '' : ''}`}
-    >
+    <div className="app-shell">
       <Navbar />
 
       <Routes>
@@ -30,6 +30,7 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
 
       {showFooter ? <Footer /> : null}
@@ -40,9 +41,11 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }
