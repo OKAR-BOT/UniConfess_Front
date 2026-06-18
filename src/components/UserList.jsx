@@ -1,18 +1,18 @@
 function UserList({ users }) {
     if (!users || users.length === 0) {
         return (
-            <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 mt-6 text-center">
-                <p className="text-gray-400">No hay usuarios registrados aún.</p>
+            <div className="card-utp mt-6 text-center">
+                <p className="text-gray-500">No hay usuarios registrados aún.</p>
             </div>
         );
     }
 
     return (
-        <div className="bg-gray-800 rounded-xl border border-gray-700 mt-6 overflow-hidden">
+        <div className="card-utp mt-6 overflow-hidden p-0">
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-gray-900 border-b border-gray-700 text-gray-400 text-sm">
+                        <tr className="border-b border-gray-200 bg-utp-gray-light text-sm text-gray-600">
                             <th className="py-4 px-6 font-semibold">ID</th>
                             <th className="py-4 px-6 font-semibold">Nombre</th>
                             <th className="py-4 px-6 font-semibold">Correo Electrónico</th>
@@ -21,13 +21,13 @@ function UserList({ users }) {
                     </thead>
                     <tbody>
                         {users.map((user) => (
-                            <tr key={user.id} className="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
-                                <td className="py-4 px-6 text-gray-500">#{user.id}</td>
-                                <td className="py-4 px-6 font-medium text-white">{user.name}</td>
-                                <td className="py-4 px-6 text-gray-400">{user.email}</td>
+                            <tr key={user.id} className="border-b border-gray-100 transition-colors hover:bg-utp-gray-light/50">
+                                <td className="py-4 px-6 text-gray-400">#{user.id}</td>
+                                <td className="py-4 px-6 font-medium text-gray-900">{user.name}</td>
+                                <td className="py-4 px-6 text-gray-600">{user.email}</td>
                                 <td className="py-4 px-6">
-                                    <button className="text-indigo-400 hover:text-indigo-300 text-sm font-medium mr-3 transition-colors">Editar</button>
-                                    <button className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors">Eliminar</button>
+                                    <button className="mr-3 text-sm font-medium text-utp-red transition-colors hover:text-utp-red-dark">Editar</button>
+                                    <button className="text-sm font-medium text-gray-500 transition-colors hover:text-utp-red">Eliminar</button>
                                 </td>
                             </tr>
                         ))}

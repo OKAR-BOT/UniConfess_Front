@@ -84,7 +84,7 @@ export default function CareerSearchSelect({
 
   return (
     <div ref={rootRef} className="relative">
-      <label htmlFor={inputId} className="block text-xs font-medium text-gray-400">
+      <label htmlFor={inputId} className="block text-xs font-bold text-theme-secondary">
         {label}
       </label>
       <input
@@ -105,9 +105,9 @@ export default function CareerSearchSelect({
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         placeholder="Busca tu carrera… ej. Software, Psicología"
-        className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        className="input-utp mt-1"
       />
-      <p className="mt-1 text-xs text-gray-500">
+      <p className="mt-1 text-xs text-theme-muted">
         Escribe para filtrar · {UTP_CAREERS.length} carreras UTP
       </p>
 
@@ -115,10 +115,11 @@ export default function CareerSearchSelect({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-gray-600 bg-gray-900 py-1 shadow-xl"
+          className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-theme py-1 shadow-xl"
+          style={{ background: 'var(--color-card-solid)' }}
         >
           {filtered.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-gray-500">Sin resultados. Prueba otro término.</li>
+            <li className="px-3 py-2 text-sm text-theme-muted">Sin resultados. Prueba otro término.</li>
           ) : (
             filtered.map((c, index) => (
               <li
@@ -130,12 +131,12 @@ export default function CareerSearchSelect({
                 onClick={() => pick(c.name)}
                 className={`cursor-pointer px-3 py-2 text-sm ${
                   index === highlight || value === c.name
-                    ? 'bg-indigo-600/30 text-white'
-                    : 'text-gray-200 hover:bg-gray-800'
+                    ? 'bg-utp-red/10 font-semibold text-utp-red'
+                    : 'text-theme hover:bg-utp-red/5'
                 }`}
               >
                 <span className="block font-medium">{c.name}</span>
-                <span className="block text-xs text-gray-400">{c.faculty}</span>
+                <span className="block text-xs text-theme-muted">{c.faculty}</span>
               </li>
             ))
           )}

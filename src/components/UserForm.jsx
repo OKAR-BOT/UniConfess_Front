@@ -14,38 +14,35 @@ function UserForm({ onAddUser }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="bg-gray-800 p-6 rounded-xl border border-gray-700 mt-6">
-            <h2 className="text-xl font-semibold mb-4 text-white">Añadir Nuevo Usuario</h2>
+        <form onSubmit={handleSubmit} className="card-utp mt-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">Añadir Nuevo Usuario</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm text-gray-400 mb-1">Nombre</label>
+                    <label className="block text-sm text-gray-600 mb-1">Nombre</label>
                     <input 
                         type="text" 
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Ej. Juan Pérez"
-                        className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        className="input-utp"
                     />
                 </div>
                 
                 <div>
-                    <label className="block text-sm text-gray-400 mb-1">Correo Electrónico</label>
+                    <label className="block text-sm text-gray-600 mb-1">Correo Electrónico</label>
                     <input 
                         type="email" 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="ejemplo@correo.com"
-                        className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                        className="input-utp"
                     />
                 </div>
             </div>
             
             <div className="mt-6 flex justify-end">
-                <button 
-                    type="submit"
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg transition-colors duration-300 font-medium"
-                >
+                <button type="submit" className="btn-utp-primary">
                     Guardar Usuario
                 </button>
             </div>
