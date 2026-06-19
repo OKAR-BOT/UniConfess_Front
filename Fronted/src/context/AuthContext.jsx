@@ -2,7 +2,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -31,11 +30,10 @@ const AuthContext = createContext(
 );
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => getCurrentUser());
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     ensureAdminSeeded();
-  }, []);
+    return getCurrentUser();
+  });
 
   const refresh = useCallback(() => {
     setUser(getCurrentUser());
