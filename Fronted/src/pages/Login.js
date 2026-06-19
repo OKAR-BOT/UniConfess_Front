@@ -16,8 +16,12 @@ function Login() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
-      navigate('/feed', { replace: true });
+      const u = await login(email, password);
+      if (u.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/feed', { replace: true });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión.');
     } finally {
