@@ -25,15 +25,16 @@ function Navbar() {
 
   return (
     <nav className="nav-utp">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
         <div
+          className="shrink-0"
           style={{ '--animate-duration': '0.5s' }}
           onClick={(e) => playAnimation(e.currentTarget, 'animate__bounce')}
         >
           <UtpLogo />
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Link
             to="/"
             className="nav-link hidden sm:inline-flex"
@@ -67,18 +68,25 @@ function Navbar() {
             style={{ '--animate-duration': '0.4s' }}
             onClick={(e) => playAnimation(e.currentTarget, 'animate__rubberBand')}
           >
-            Membresía
+            Membresia
           </Link>
-
-          <ThemeToggle className="ml-1" />
 
           {user ? (
             <>
-              <span className="hidden max-w-[100px] truncate px-2 text-xs text-white/75 sm:inline lg:max-w-[120px]">
+              <span className="hidden max-w-[80px] truncate px-1 text-xs text-white/75 sm:inline lg:max-w-[100px]">
                 @{user.handle}
-                {user.role === 'premium' ? <span className="ml-1" title="Premium">⭐</span> : null}
-                {isAdmin ? <span className="ml-1" title="Admin">🛡️</span> : null}
               </span>
+
+              {isAdmin ? (
+                <Link
+                  to="/admin"
+                  className="nav-link font-semibold"
+                  style={{ '--animate-duration': '0.4s' }}
+                  onClick={(e) => playAnimation(e.currentTarget, 'animate__rubberBand')}
+                >
+                  Admin
+                </Link>
+              ) : null}
 
               <Link
                 to="/dashboard"
@@ -88,17 +96,6 @@ function Navbar() {
               >
                 Cuenta
               </Link>
-
-              {isAdmin ? (
-                <Link
-                  to="/admin"
-                  className="nav-link font-semibold"
-                  style={{ '--animate-duration': '0.4s' }}
-                  onClick={(e) => playAnimation(e.currentTarget, 'animate__rubberBand')}
-                >
-                  Panel Admin
-                </Link>
-              ) : null}
 
               <button
                 type="button"
@@ -122,6 +119,8 @@ function Navbar() {
               Login
             </Link>
           )}
+
+          <ThemeToggle />
         </div>
       </div>
     </nav>

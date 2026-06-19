@@ -63,6 +63,7 @@
     --radius-xl: 0.75rem;
     --radius-2xl: 1rem;
     --radius-3xl: 1.5rem;
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
     --animate-spin: spin 1s linear infinite;
     --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     --blur-sm: 8px;
@@ -493,8 +494,8 @@
   .max-w-7xl {
     max-width: var(--container-7xl);
   }
-  .max-w-\[100px\] {
-    max-width: 100px;
+  .max-w-\[80px\] {
+    max-width: 80px;
   }
   .max-w-full {
     max-width: 100%;
@@ -806,6 +807,9 @@
   }
   .p-8 {
     padding: calc(var(--spacing) * 8);
+  }
+  .px-1 {
+    padding-inline: calc(var(--spacing) * 1);
   }
   .px-2 {
     padding-inline: calc(var(--spacing) * 2);
@@ -1556,9 +1560,9 @@
       max-width: var(--container-4xl);
     }
   }
-  .lg\:max-w-\[120px\] {
+  .lg\:max-w-\[100px\] {
     @media (width >= 64rem) {
-      max-width: 120px;
+      max-width: 100px;
     }
   }
   .lg\:grid-cols-3 {
