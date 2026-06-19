@@ -1,29 +1,10 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Backend dependencies
+back/node_modules/
 
-# dependencies
+# Root-level node_modules (if any)
 node_modules/
-**/node_modules/
-/.pnp
-.pnp.js
 
-# testing
-/coverage
-
-# production
-/build
-**/build/
-
-# misc
+# OS / editor
 .DS_Store
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Carpeta duplicada del frontend (el código activo está en /src)
-Fronted/
+Thumbs.db
+*.log
