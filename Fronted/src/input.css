@@ -428,3 +428,13 @@
     transform: scale(0.85);
   }
 }
+
+@keyframes bounce-in {
+  0% { transform: translateY(20px); opacity: 0; }
+  50% { transform: translateY(-4px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.35s ease-out;
+}

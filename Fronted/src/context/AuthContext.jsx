@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -10,6 +11,15 @@ import {
   loginUser,
   logoutUser,
   registerUser,
+  isAdmin,
+  isPremium,
+  canPostAnonymously,
+  getAllUsers,
+  updateUserRole,
+  toggleUserBan,
+  deleteConfessionById,
+  setUserPremium,
+  ensureAdminSeeded,
 } from '../service/localAuth';
 
 /** @typedef {import('../service/localAuth').PublicUser} PublicUser */
@@ -22,6 +32,10 @@ const AuthContext = createContext(
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getCurrentUser());
+
+  useEffect(() => {
+    ensureAdminSeeded();
+  }, []);
 
   const refresh = useCallback(() => {
     setUser(getCurrentUser());
@@ -45,7 +59,22 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, login, register, logout, refresh }),
+    () => ({
+      user,
+      login,
+      register,
+      logout,
+      refresh,
+      isAdmin: isAdmin(user),
+      isPremium: isPremium(user),
+      canPostAnonymously: canPostAnonymously(user),
+      getAllUsers,
+      updateUserRole,
+      toggleUserBan,
+      deleteConfessionById,
+      setUserPremium,
+      ensureAdminSeeded,
+    }),
     [user, login, register, logout, refresh]
   );
 

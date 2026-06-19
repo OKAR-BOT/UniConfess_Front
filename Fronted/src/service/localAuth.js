@@ -1,11 +1,28 @@
 import { isValidUtpCareer } from '../data/utpCareers';
 
+/** @returns {'user' | 'premium' | 'admin'} */
+export function getUserRole(user) {
+  return user?.role || 'user';
+}
+
+export function isAdmin(user) {
+  return user?.role === 'admin';
+}
+
+export function isPremium(user) {
+  return user?.role === 'premium';
+}
+
+export function canPostAnonymously(user) {
+  return user?.role === 'premium' || user?.role === 'admin';
+}
+
 const USERS_KEY = 'uconfess_users_v1';
 const SESSION_KEY = 'uconfess_session_v1';
 
-/** @typedef {{ id: string, email: string, displayName: string, handle: string, career: string, passwordHash: string, createdAt: string }} UserRecord */
+/** @typedef {{ id: string, email: string, displayName: string, handle: string, career: string, passwordHash: string, role: 'user' | 'premium' | 'admin', isAnonymous: boolean, isBanned: boolean, membershipExpiresAt: string | null, createdAt: string }} UserRecord */
 
-/** @typedef {{ id: string, email: string, displayName: string, handle: string, career: string, createdAt: string }} PublicUser */
+/** @typedef {{ id: string, email: string, displayName: string, handle: string, career: string, role: 'user' | 'premium' | 'admin', isAnonymous: boolean, isBanned: boolean, membershipExpiresAt: string | null, createdAt: string }} PublicUser */
 
 async function hashPassword(password) {
   const enc = new TextEncoder().encode(password);
@@ -13,6 +30,26 @@ async function hashPassword(password) {
   return Array.from(new Uint8Array(buf))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+const ADMIN_SEED = {
+  id: 'admin-seed-1',
+  email: 'george@utp.edu.pe',
+  displayName: 'George Admin',
+  handle: 'george_admin',
+  career: 'Ingeniería de Sistemas',
+  role: 'admin',
+  isAnonymous: false,
+  isBanned: false,
+  membershipExpiresAt: null,
+  createdAt: new Date().toISOString(),
+};
+
+async function seedAdmin(users) {
+  const exists = users.some((u) => u.email === ADMIN_SEED.email);
+  if (exists) return users;
+  const passwordHash = await hashPassword('admin123');
+  return [...users, { ...ADMIN_SEED, passwordHash }];
 }
 
 function readUsers() {
@@ -30,6 +67,14 @@ function writeUsers(list) {
   localStorage.setItem(USERS_KEY, JSON.stringify(list));
 }
 
+export async function ensureAdminSeeded() {
+  const users = readUsers();
+  const updated = await seedAdmin(users);
+  if (updated.length !== users.length) {
+    writeUsers(updated);
+  }
+}
+
 /** @param {UserRecord} u */
 function toPublic(u) {
   return {
@@ -38,6 +83,10 @@ function toPublic(u) {
     displayName: u.displayName,
     handle: u.handle,
     career: u.career,
+    role: u.role || 'user',
+    isAnonymous: u.isAnonymous || false,
+    isBanned: u.isBanned || false,
+    membershipExpiresAt: u.membershipExpiresAt || null,
     createdAt: u.createdAt,
   };
 }
@@ -100,6 +149,10 @@ export async function registerUser(input) {
     displayName,
     handle,
     career,
+    role: 'user',
+    isAnonymous: false,
+    isBanned: false,
+    membershipExpiresAt: null,
     passwordHash,
     createdAt: new Date().toISOString(),
   });
@@ -147,4 +200,48 @@ export function getCurrentUser() {
   } catch {
     return null;
   }
+}
+
+export function getAllUsers() {
+  return readUsers().map(toPublic);
+}
+
+export function updateUserRole(userId, newRole) {
+  const users = readUsers();
+  const idx = users.findIndex((u) => u.id === userId);
+  if (idx === -1) throw new Error('Usuario no encontrado.');
+  users[idx].role = newRole;
+  writeUsers(users);
+  return toPublic(users[idx]);
+}
+
+export function toggleUserBan(userId) {
+  const users = readUsers();
+  const idx = users.findIndex((u) => u.id === userId);
+  if (idx === -1) throw new Error('Usuario no encontrado.');
+  users[idx].isBanned = !users[idx].isBanned;
+  writeUsers(users);
+  return toPublic(users[idx]);
+}
+
+export function deleteConfessionById(postId) {
+  const key = 'uconfess_confessions_v1';
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const list = JSON.parse(raw);
+    if (!Array.isArray(list)) return;
+    const filtered = list.filter((c) => c.id !== postId);
+    localStorage.setItem(key, JSON.stringify(filtered));
+  } catch {}
+}
+
+export function setUserPremium(userId, expiryDate) {
+  const users = readUsers();
+  const idx = users.findIndex((u) => u.id === userId);
+  if (idx === -1) throw new Error('Usuario no encontrado.');
+  users[idx].role = 'premium';
+  users[idx].membershipExpiresAt = expiryDate || new Date(Date.now() + 365 * 86400000).toISOString();
+  writeUsers(users);
+  return toPublic(users[idx]);
 }
