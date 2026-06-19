@@ -73,7 +73,7 @@ function Navbar() {
 
           {user ? (
             <>
-              <span className="hidden max-w-[80px] truncate px-1 text-xs text-white/75 sm:inline lg:max-w-[100px]">
+              <span className="hidden shrink-0 px-1 text-xs text-white/75 sm:inline">
                 @{user.handle}
               </span>
 

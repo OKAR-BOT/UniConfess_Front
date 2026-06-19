@@ -45,12 +45,7 @@ const ADMIN_SEED = {
   createdAt: new Date().toISOString(),
 };
 
-async function seedAdmin(users) {
-  const exists = users.some((u) => u.email === ADMIN_SEED.email);
-  if (exists) return users;
-  const passwordHash = await hashPassword('admin123');
-  return [...users, { ...ADMIN_SEED, passwordHash }];
-}
+const ADMIN_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9'; // sha256('admin123')
 
 function readUsers() {
   try {
@@ -67,11 +62,15 @@ function writeUsers(list) {
   localStorage.setItem(USERS_KEY, JSON.stringify(list));
 }
 
-export async function ensureAdminSeeded() {
+export function ensureAdminSeeded() {
   const users = readUsers();
-  const updated = await seedAdmin(users);
-  if (updated.length !== users.length) {
-    writeUsers(updated);
+  const idx = users.findIndex((u) => u.email === ADMIN_SEED.email);
+  if (idx === -1) {
+    writeUsers([...users, { ...ADMIN_SEED, passwordHash: ADMIN_PASSWORD_HASH }]);
+  } else if (users[idx].career !== ADMIN_SEED.career || users[idx].displayName !== ADMIN_SEED.displayName) {
+    users[idx].career = ADMIN_SEED.career;
+    users[idx].displayName = ADMIN_SEED.displayName;
+    writeUsers(users);
   }
 }
 
