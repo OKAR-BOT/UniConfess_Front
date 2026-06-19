@@ -16,7 +16,7 @@ const playAnimation = (el, animationClass) => {
 
 function Navbar() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -76,6 +76,8 @@ function Navbar() {
             <>
               <span className="hidden max-w-[100px] truncate px-2 text-xs text-white/75 sm:inline lg:max-w-[120px]">
                 @{user.handle}
+                {user.role === 'premium' ? <span className="ml-1" title="Premium">⭐</span> : null}
+                {isAdmin ? <span className="ml-1" title="Admin">🛡️</span> : null}
               </span>
 
               <Link
@@ -86,6 +88,17 @@ function Navbar() {
               >
                 Cuenta
               </Link>
+
+              {isAdmin ? (
+                <Link
+                  to="/admin"
+                  className="nav-link font-semibold"
+                  style={{ '--animate-duration': '0.4s' }}
+                  onClick={(e) => playAnimation(e.currentTarget, 'animate__rubberBand')}
+                >
+                  Panel Admin
+                </Link>
+              ) : null}
 
               <button
                 type="button"

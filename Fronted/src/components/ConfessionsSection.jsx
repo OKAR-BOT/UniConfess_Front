@@ -58,7 +58,7 @@ function IconRepost() {
  */
 function ConfessionsSection({ variant = 'default' }) {
   const isFeed = variant === 'feed';
-  const { user } = useAuth();
+  const { user, isAdmin, isPremium, canPostAnonymously, deleteConfessionById } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -67,6 +67,7 @@ function ConfessionsSection({ variant = 'default' }) {
   const [body, setBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
+  const [postAnon, setPostAnon] = useState(false);
 
   const [interactionMap, setInteractionMap] = useState({});
   const [openComments, setOpenComments] = useState({});
@@ -107,13 +108,14 @@ function ConfessionsSection({ variant = 'default' }) {
     setFormError(null);
     setSubmitting(true);
     try {
+      const anon = postAnon && canPostAnonymously;
       const created = await createConfession(
         { body, category },
         {
           userId: user.id,
-          displayName: user.displayName,
-          handle: user.handle,
-          career: user.career,
+          displayName: anon ? 'Anónimo UTP' : user.displayName,
+          handle: anon ? 'anonimo_utp' : user.handle,
+          career: anon ? '' : user.career,
         }
       );
       setItems((prev) => {
@@ -218,6 +220,19 @@ function ConfessionsSection({ variant = 'default' }) {
                       ))}
                     </select>
                   </div>
+                  {canPostAnonymously ? (
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={postAnon}
+                        onChange={(e) => setPostAnon(e.target.checked)}
+                        className="size-4 accent-utp-red rounded"
+                      />
+                      <span className="text-sm font-medium text-theme-secondary">
+                        🎭 Publicar anónimamente
+                      </span>
+                    </label>
+                  ) : null}
                   <div>
                     <label htmlFor="cf-body" className="block text-sm font-bold text-theme-secondary">
                       Tu confesión
@@ -307,6 +322,7 @@ function ConfessionsSection({ variant = 'default' }) {
                         <div className="min-w-0 flex-1 overflow-hidden">
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                             <p className="truncate text-sm font-bold text-theme">{c.displayName}</p>
+                            {c.displayName === 'Anónimo UTP' ? <span className="shrink-0 text-xs" title="Anónimo">🎭</span> : null}
                             <p className="truncate text-sm font-semibold text-utp-red">@{c.handle}</p>
                             <time dateTime={c.createdAt} className="text-xs text-theme-muted" title={c.createdAt}>
                               {formatRelativeTime(c.createdAt)}
@@ -352,6 +368,18 @@ function ConfessionsSection({ variant = 'default' }) {
                               <IconHeart filled={ix.liked} />
                               <span className="tabular-nums">{ix.likeCount}</span>
                             </button>
+                            {isAdmin ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  deleteConfessionById(c.id);
+                                  refresh();
+                                }}
+                                className="ml-auto flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-utp-red transition hover:bg-utp-red/10"
+                              >
+                                🗑️ Eliminar
+                              </button>
+                            ) : null}
                           </div>
 
                           {!user ? (
