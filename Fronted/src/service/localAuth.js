@@ -37,7 +37,7 @@ const ADMIN_SEED = {
   email: 'george@utp.edu.pe',
   displayName: 'George Admin',
   handle: 'george_admin',
-  career: 'Ingeniería de Sistemas',
+  career: 'Ingeniería de Software',
   role: 'admin',
   isAnonymous: false,
   isBanned: false,
