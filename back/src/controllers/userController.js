@@ -173,7 +173,10 @@ const getUserConfessions = async (req, res) => {
     }
     const confessions = await db.Confession.findAll({
       where: { userId: user.id },
-      order: [['createdAt', 'DESC']],
+      order: [
+        ['isPinned', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
     });
     res.status(200).json(confessions);
   } catch (err) {
@@ -181,9 +184,33 @@ const getUserConfessions = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const { handle } = req.params;
+    const user = await db.User.findOne({ where: { handle: handle.toLowerCase() } });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    if (req.user.id !== user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'No autorizado.' });
+    }
+    const allowed = ['displayName', 'bio', 'bannerColor', 'career'];
+    allowed.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        user[field] = req.body[field];
+      }
+    });
+    await user.save();
+    const { passwordHash: _, ...publicUser } = user.toJSON();
+    res.status(200).json(publicUser);
+  } catch (err) {
+    res.status(500).json({ message: 'Error al actualizar perfil', error: err.message });
+  }
+};
+
 module.exports = {
   getAllUsers, createUser, loginUser,
   postConfession, getAllConfessions,
   updateUserRole, toggleUserBan, setUserPremium,
-  getProfileByHandle, getUserConfessions,
+  getProfileByHandle, getUserConfessions, updateProfile,
 };

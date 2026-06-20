@@ -12,6 +12,11 @@ export default function Profile() {
   const [tab, setTab] = useState('confessions');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [editBio, setEditBio] = useState('');
+  const [editBanner, setEditBanner] = useState('');
+  const [editCareer, setEditCareer] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -23,10 +28,41 @@ export default function Profile() {
       .then(([profileRes, confessionsRes]) => {
         setProfile(profileRes);
         setConfessions(confessionsRes);
+        setEditBio(profileRes.bio || '');
+        setEditBanner(profileRes.bannerColor || '');
+        setEditCareer(profileRes.career || '');
       })
       .catch((err) => setError(err.message || 'Error al cargar perfil'))
       .finally(() => setLoading(false));
   }, [handle]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const updated = await apiRequest('PUT', `/users/profile/${handle}`, {
+        bio: editBio,
+        bannerColor: editBanner,
+        career: editCareer,
+      }, true);
+      setProfile(updated);
+      setEditing(false);
+    } catch (err) {
+      alert(err.message || 'Error al guardar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePinToggle = async (confessionId) => {
+    try {
+      const updated = await apiRequest('PUT', `/confessions/${confessionId}/pin`, {}, true);
+      setConfessions((prev) =>
+        prev.map((c) => (c.id === confessionId ? { ...c, isPinned: updated.isPinned } : c))
+      );
+    } catch (err) {
+      alert(err.message || 'Error al cambiar pin');
+    }
+  };
 
   if (loading) {
     return (
@@ -53,6 +89,7 @@ export default function Profile() {
   }
 
   const isOwner = user && user.handle.toLowerCase() === handle.toLowerCase();
+  const isPremiumOrAdmin = user && (user.role === 'premium' || user.role === 'admin');
   const roleBadge = {
     admin: 'bg-red-600 text-white',
     premium: 'bg-amber-500 text-white',
@@ -67,43 +104,83 @@ export default function Profile() {
 
   return (
     <div className="max-w-2xl mx-auto p-4">
-      <div className="bg-theme-bg-secondary rounded-xl border border-theme-border p-6 mb-6">
-        <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-2xl font-bold shrink-0">
-            {profile.displayName.charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-theme truncate">{profile.displayName}</h1>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded ${roleBadge}`}>
-                {profile.role}
-              </span>
+      <div className={`rounded-xl border border-theme-border overflow-hidden ${profile.bannerColor ? '' : ''}`}>
+        {profile.bannerColor && (
+          <div className="h-24" style={{ backgroundColor: profile.bannerColor }} />
+        )}
+        <div className="bg-theme-bg-secondary p-6">
+          <div className="flex items-start gap-4">
+            <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-2xl font-bold shrink-0 ${profile.bannerColor ? '-mt-12 border-4 border-theme-bg-secondary' : ''}`}>
+              {profile.displayName.charAt(0).toUpperCase()}
             </div>
-            <p className="text-sm text-theme-muted">@{profile.handle}</p>
-            <p className="text-sm text-theme mt-1">{profile.career}</p>
-            <p className="text-xs text-theme-muted mt-1">
-              Se unió el {new Date(profile.createdAt).toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-bold text-theme truncate">{profile.displayName}</h1>
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded ${roleBadge}`}>
+                  {profile.role}
+                </span>
+              </div>
+              <p className="text-sm text-theme-muted">@{profile.handle}</p>
+              {editing ? (
+                <div className="space-y-2 mt-2">
+                  <textarea
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    placeholder="Biografía..."
+                    className="input-utp w-full text-sm"
+                    rows={2}
+                  />
+                  <input
+                    value={editBanner}
+                    onChange={(e) => setEditBanner(e.target.value)}
+                    placeholder="Color de banner (ej: #1e293b)"
+                    className="input-utp w-full text-sm"
+                  />
+                  <input
+                    value={editCareer}
+                    onChange={(e) => setEditCareer(e.target.value)}
+                    placeholder="Carrera"
+                    className="input-utp w-full text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={handleSave} disabled={saving} className="btn-utp-primary text-xs px-3 py-1">
+                      {saving ? '...' : 'Guardar'}
+                    </button>
+                    <button onClick={() => setEditing(false)} className="btn-utp-secondary text-xs px-3 py-1">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {profile.bio && <p className="text-sm text-theme mt-1">{profile.bio}</p>}
+                  <p className="text-sm text-theme mt-1">{profile.career}</p>
+                  <p className="text-xs text-theme-muted mt-1">
+                    Se unió el {new Date(profile.createdAt).toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                </>
+              )}
+            </div>
+            {isOwner && !editing && (
+              <button onClick={() => setEditing(true)} className="text-xs text-utp-red hover:underline shrink-0 mt-1">
+                Editar perfil
+              </button>
+            )}
           </div>
-          {isOwner && (
-            <Link to="/settings" className="text-xs text-utp-red hover:underline shrink-0 mt-1">
-              Editar perfil
-            </Link>
-          )}
-        </div>
 
-        <div className="flex gap-6 mt-4 pt-4 border-t border-theme-border">
-          <div className="text-center">
-            <p className="text-lg font-bold text-theme">{profile.stats.confessions}</p>
-            <p className="text-xs text-theme-muted">Confesiones</p>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold text-theme">{profile.stats.comments}</p>
-            <p className="text-xs text-theme-muted">Comentarios</p>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold text-theme">{profile.stats.likesGiven}</p>
-            <p className="text-xs text-theme-muted">Likes dados</p>
+          <div className="flex gap-6 mt-4 pt-4 border-t border-theme-border">
+            <div className="text-center">
+              <p className="text-lg font-bold text-theme">{profile.stats.confessions}</p>
+              <p className="text-xs text-theme-muted">Confesiones</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold text-theme">{profile.stats.comments}</p>
+              <p className="text-xs text-theme-muted">Comentarios</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold text-theme">{profile.stats.likesGiven}</p>
+              <p className="text-xs text-theme-muted">Likes dados</p>
+            </div>
           </div>
         </div>
       </div>
@@ -134,8 +211,9 @@ export default function Profile() {
       ) : (
         <div className="space-y-3">
           {filtered.map((c) => (
-            <div key={c.id} className="bg-theme-bg-secondary rounded-xl border border-theme-border p-4">
+            <div key={c.id} className={`bg-theme-bg-secondary rounded-xl border p-4 ${c.isPinned ? 'border-amber-500' : 'border-theme-border'}`}>
               <div className="flex items-center gap-2 mb-2">
+                {c.isPinned && <span className="text-xs text-amber-500 font-semibold">📌 Fijado</span>}
                 <span className="text-xs text-theme-muted">
                   {formatRelativeTime(c.createdAt)}
                 </span>
@@ -146,6 +224,14 @@ export default function Profile() {
                 {c.title && <h3 className="font-semibold mb-1">{c.title}</h3>}
                 <p className="whitespace-pre-wrap break-words">{c.body}</p>
               </Link>
+              {isOwner && isPremiumOrAdmin && tab === 'confessions' && (
+                <button
+                  onClick={() => handlePinToggle(c.id)}
+                  className={`text-xs mt-2 transition-colors ${c.isPinned ? 'text-amber-500 hover:text-amber-600' : 'text-theme-muted hover:text-amber-500'}`}
+                >
+                  {c.isPinned ? 'Quitar pin' : 'Fijar en perfil'}
+                </button>
+              )}
             </div>
           ))}
         </div>

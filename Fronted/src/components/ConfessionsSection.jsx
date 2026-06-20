@@ -73,8 +73,9 @@ function ReplyThread({ comment, postId, depth, userId, isAdmin, onRefresh }) {
 
   return (
     <div className="border-l-2 border-theme/20 pl-3 ml-2 mt-2">
-      <div className="text-sm">
+      <div className="text-sm flex items-center gap-1">
         <Link to={`/profile/${comment.handle}`} className="font-bold text-theme hover:text-utp-red transition-colors">{comment.displayName}</Link>
+        {(comment.role === 'premium' || comment.role === 'admin') && <span className="text-[10px] font-semibold text-amber-500 border border-amber-500 rounded px-0.5">PREMIUM</span>}
         <Link to={`/profile/${comment.handle}`} className="text-xs text-theme-muted ml-1 hover:text-utp-red transition-colors">@{comment.handle}</Link>
       </div>
       <p className="mt-0.5 text-sm text-theme-secondary break-words">{comment.body}</p>
@@ -414,6 +415,7 @@ function ConfessionsSection({ variant = 'default' }) {
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <Link to={`/profile/${c.handle}`} className="truncate text-sm font-bold text-theme hover:text-utp-red transition-colors">{c.displayName}</Link>
                             <Link to={`/profile/${c.handle}`} className="truncate text-xs text-theme-muted hover:text-utp-red transition-colors">@{c.handle}</Link>
+                            {(c.authorRole === 'premium' || c.authorRole === 'admin') && <span className="text-[10px] font-semibold text-amber-500 border border-amber-500 rounded px-1">PREMIUM</span>}
                             {c.displayName === 'Anonimo UTP' ? <span className="shrink-0 text-xs" title="Anonimo">🎭</span> : null}
                             <time dateTime={c.createdAt} className="text-xs text-theme-muted ml-auto" title={c.createdAt}>
                               {formatRelativeTime(c.createdAt)}

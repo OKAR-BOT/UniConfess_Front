@@ -4,8 +4,15 @@ const getAllConfessions = async (req, res) => {
   try {
     const confessions = await db.Confession.findAll({
       order: [['createdAt', 'DESC']],
+      include: [{ model: db.User, attributes: ['role'], as: 'user' }],
     });
-    res.status(200).json(confessions);
+    const result = confessions.map((c) => {
+      const json = c.toJSON();
+      json.authorRole = json.user ? json.user.role : 'user';
+      delete json.user;
+      return json;
+    });
+    res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener confesiones', error: err.message });
   }
@@ -59,4 +66,25 @@ const deleteConfession = async (req, res) => {
   }
 };
 
-module.exports = { getAllConfessions, createConfession, deleteConfession };
+const togglePin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const confession = await db.Confession.findByPk(id);
+    if (!confession) {
+      return res.status(404).json({ message: 'Confesion no encontrada.' });
+    }
+    if (req.user.id !== confession.userId && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'No autorizado.' });
+    }
+    if (req.user.role !== 'premium' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Solo usuarios premium pueden fijar confesiones.' });
+    }
+    confession.isPinned = !confession.isPinned;
+    await confession.save();
+    res.status(200).json(confession);
+  } catch (err) {
+    res.status(500).json({ message: 'Error al cambiar pin', error: err.message });
+  }
+};
+
+module.exports = { getAllConfessions, createConfession, deleteConfession, togglePin };
