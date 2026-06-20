@@ -2,37 +2,35 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import MeshBackground from '../components/MeshBackground';
+import axios from 'axios';
 
 function Login() {
   const { login } = useAuth();
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const u = await login(email, password);
-      if (u.role === 'admin') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/feed', { replace: true });
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión.');
-    } finally {
-      setLoading(false);
-    }
-  }
+  
+  const navigate = useNavigate();
 
+  const manejoLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const respuesta = await axios.post('http://localhost:8080/api/users/login', { email, password }, {
+      withCredentials: true 
+      
+    });
+    navigate('/feed', { replace: true });
+    alert("¡Login correcto!");
+  } catch (error) {
+    alert("Credenciales incorrectas");
+  }
+};
   return (
     <div className="relative flex min-h-[calc(100vh-4.25rem)] items-center justify-center px-4 py-12">
       <MeshBackground variant="auth" />
-      <form onSubmit={handleLogin} className="card-utp relative z-10 w-full max-w-md p-8 shadow-xl">
+      <form onSubmit={manejoLogin} className="card-utp relative z-10 w-full max-w-md p-8 shadow-xl">
         <div className="mb-6 flex justify-center">
           <span className="flex leading-none">
             <span className="logo-block--red text-base">U</span>
