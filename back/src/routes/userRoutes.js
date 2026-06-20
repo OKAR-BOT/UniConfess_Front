@@ -9,6 +9,8 @@ router.post('/', userController.createUser);
 router.post('/login', userController.loginUser);
 router.post('/:userId/confessions', verifyToken, userController.postConfession);
 router.get('/confessions', userController.getAllConfessions);
+router.get('/profile/:handle', userController.getProfileByHandle);
+router.get('/profile/:handle/confessions', userController.getUserConfessions);
 router.put('/:id/role', verifyToken, authorize('admin'), userController.updateUserRole);
 router.put('/:id/ban', verifyToken, authorize('admin'), userController.toggleUserBan);
 router.put('/:id/premium', verifyToken, authorize('admin'), userController.setUserPremium);
