@@ -1,26 +1,55 @@
-export const GetUsers = async () => {
-    // Usando una API pública gratuita para pruebas
-    const response = await fetch('https://jsonplaceholder.typicode.com/users');
-    if (!response.ok) {
-        throw new Error('No se pudo obtener los usuarios');
-    }
-    return response.json();
-};
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
 
-export const CreateUser = async (user) => {
-    const response = await fetch('https://jsonplaceholder.typicode.com/users', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            ...user,
-            // JSONPlaceholder requiere un ID en la respuesta fake, pero lo genera
-        }),
-    });
-    
-    if (!response.ok) {
-        throw new Error('Error al crear usuario');
+export function getApiUrl(path) {
+  return `${API_BASE.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+}
+
+function getToken() {
+  try {
+    return localStorage.getItem('uconfess_jwt');
+  } catch {
+    return null;
+  }
+}
+
+export async function apiRequest(method, path, body = null, auth = false) {
+  const url = getApiUrl(path);
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) {
+    const token = getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
-    return response.json();
-};
+  }
+  const opts = { method, headers };
+  if (body) {
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opts);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const msg = data?.message || `Error ${res.status}: ${res.statusText}`;
+    const err = new Error(msg);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
+export function getTokenExpiry() {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp ? new Date(payload.exp * 1000) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function isTokenExpired() {
+  const expiry = getTokenExpiry();
+  if (!expiry) return true;
+  return Date.now() >= expiry.getTime();
+}
