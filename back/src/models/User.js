@@ -46,6 +46,14 @@ const User = sequelize.define('User', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  bio: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  bannerColor: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 }, {
   tableName: 'users',
   timestamps: true,

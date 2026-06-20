@@ -34,6 +34,10 @@ const Confession = sequelize.define('Confession', {
     type: DataTypes.STRING,
     defaultValue: 'General',
   },
+  isPinned: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 }, {
   tableName: 'confessions',
   timestamps: true,

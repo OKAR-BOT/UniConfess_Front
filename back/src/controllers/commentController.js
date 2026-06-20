@@ -10,9 +10,15 @@ const getComments = async (req, res) => {
     const comments = await db.Comment.findAll({
       where: { confessionId: id },
       order: [['createdAt', 'ASC']],
-      raw: true,
+      include: [{ model: db.User, attributes: ['role'], as: 'user' }],
     });
-    const tree = buildTree(comments);
+    const flat = comments.map((c) => {
+      const json = c.toJSON();
+      json.role = json.user ? json.user.role : 'user';
+      delete json.user;
+      return json;
+    });
+    const tree = buildTree(flat);
     res.status(200).json(tree);
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener comentarios', error: err.message });
