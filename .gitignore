@@ -13,6 +13,9 @@ Thumbs.db
 .env.local
 *.local
 
+# Do not commit sensitive env files
+back/.env
+
 # Database files (SQLite)
 *.sqlite
 *.sqlite-journal
