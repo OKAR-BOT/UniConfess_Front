@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-
+const path = require('path');
 
 require('dotenv').config();
 
@@ -30,8 +30,16 @@ app.use('/api/confessions', confessionRoutes);
 app.use('/api/confessions', commentRoutes);
 app.use('/api/interactions', interactionRoutes);
 
+const buildPath = path.join(__dirname, '..', '..', 'Fronted', 'build');
+app.use(express.static(buildPath));
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Servidor corriendo perfectamente' });
+});
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(buildPath, 'index.html'));
 });
 
 async function start() {
