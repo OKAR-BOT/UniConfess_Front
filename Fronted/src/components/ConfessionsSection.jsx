@@ -1,230 +1,438 @@
-import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { createConfession, listConfessions } from '../service/confessionsApi';
+import {
+  addComment,
+  getInteractionsForPosts,
+  toggleLike,
+  toggleRepost,
+} from '../service/confessionInteractions';
+import { formatRelativeTime } from '../utils/formatTime';
 
-// Tu URL base unificada
-const API_BASE_URL = 'http://localhost:8080/api/users/confessions';
+const CATEGORIES = [
+  { value: 'General', label: 'General' },
+  { value: 'Confesion', label: 'Confesion' },
+  { value: 'Chisme', label: 'Chisme' },
+  { value: 'Campus', label: 'Campus / UTP' },
+  { value: 'Crush', label: 'Crush' },
+  { value: 'Otro', label: 'Otro' },
+];
 
-// Función para listar las confesiones
-export const listConfessions = async () => {
-  try {
-    const response = await axios.get(API_BASE_URL);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching confessions:', error);
-    throw new Error(error.response?.data?.message || 'Error al cargar las publicaciones');
-  }
-};
+const AVATAR =
+  'https://img.freepik.com/vector-premium/ilustracion-plana-vectorial-escala-grises-icono-perfil-usuario-avatar-persona-imagen-perfil-silueta-genero-neutral-apto-perfiles-redes-sociales-iconos-protectores-pantalla-como-plantillax9xa_719432-2210.jpg?semt=ais_hybrid&w=740&q=80';
 
-export default function ConfessionsApp() {
-  // 1. Estados de la Lista de Confesiones
+function IconHeart({ filled }) {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M12 21s-6.716-4.432-9-8.5C.5 8.5 3 5 7.5 5c2.5 0 4.5 2 4.5 2S14 5 16.5 5 23.5 8.5 21 12.5 12 21 12 21z" />
+    </svg>
+  );
+}
+
+function IconBubble() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M21 12a8 8 0 10-14 5.5L4 20l2.5-3A8 8 0 0021 12z" />
+    </svg>
+  );
+}
+
+function IconRepost() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M4 9V5h7M20 15v4h-7M5 5l3 3M19 19l-3-3M4 15h16M20 9H4" />
+    </svg>
+  );
+}
+
+function ConfessionsSection({ variant = 'default' }) {
+  const isFeed = variant === 'feed';
+  const { user, isAdmin, canPostAnonymously, deleteConfessionById } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
-  // 2. Estados del Formulario de Nueva Publicación
-  const [typePost, setTypePost] = useState('Confesión');
-  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('General');
+  const [body, setBody] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
+  const [postAnon, setPostAnon] = useState(false);
 
-  // Función para recargar la lista de confesiones
+  const [interactionMap, setInteractionMap] = useState({});
+  const [openComments, setOpenComments] = useState({});
+  const [commentDraft, setCommentDraft] = useState({});
+  const [commentError, setCommentError] = useState({});
+
+  const syncInteractions = useCallback((list, uid) => {
+    setInteractionMap(getInteractionsForPosts(list.map((c) => c.id), uid));
+  }, []);
+
   const refresh = useCallback(async () => {
     setLoadError(null);
     setLoading(true);
     try {
       const data = await listConfessions();
-      setItems(Array.isArray(data) ? data : []);
+      setItems(data);
+      syncInteractions(data, user?.id ?? null);
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : 'Error al cargar.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [syncInteractions, user?.id]);
 
-  // Carga inicial
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  // 3. Función que maneja el envío del formulario
-  const createConfession = async (e) => {
-    e.preventDefault();
-
-    if (!content.trim()) {
-      alert("Por favor, escribe algo antes de publicar.");
-      return;
+  useEffect(() => {
+    if (!loading && items.length) {
+      syncInteractions(items, user?.id ?? null);
     }
+  }, [user?.id, loading, items, syncInteractions]);
 
-    // Estructura los campos tal como los requiera tu backend de Spring Boot / Node
-    const nuevaPublicacion = {
-      typePost: typePost, // Asegúrate de que tu backend use camelCase o 'tipo' según definiste
-      content: content
-    };
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!user) return;
+    setFormError(null);
+    setSubmitting(true);
+    try {
+      const anon = postAnon && canPostAnonymously;
+      const created = await createConfession(
+        { body, category },
+        {
+          userId: user.id,
+          displayName: anon ? 'Anonimo UTP' : user.displayName,
+          handle: anon ? 'anonimo_utp' : user.handle,
+          career: anon ? '' : user.career,
+        }
+      );
+      setItems((prev) => {
+        const next = [created, ...prev.filter((x) => x.id !== created.id)];
+        syncInteractions(next, user.id);
+        return next;
+      });
+      setBody('');
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'No se pudo publicar.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
-  try {
-  console.log('Enviando publicación...', nuevaPublicacion);
+  function onToggleLike(postId) {
+    if (!user) return;
+    toggleLike(postId, user.id);
+    syncInteractions(items, user.id);
+  }
 
-  // CORREGIDO: Le añadimos el tercer parámetro con 'withCredentials'
-  const respuesta = await axios.post(
-    'http://localhost:8080/api/users/Cconfessions', 
-    nuevaPublicacion, 
-    { withCredentials: true } // 👈 ¡ESTO ES LO QUE FALTA!
-  );
-  
-  console.log('Respuesta del servidor:', respuesta.data);
-  alert('¡Publicación creada con éxito!');
+  function onToggleRepost(postId) {
+    if (!user) return;
+    toggleRepost(postId, user.id);
+    syncInteractions(items, user.id);
+  }
 
-  // Limpiamos el formulario
-  setContent('');
-  refresh(); // Si tienes la función para recargar la lista
-  
-} catch (error) {
-  console.error('Error al enviar la confesión:', error);
-  alert('Hubo un error al intentar guardar la publicación.');
-}
-    
-  };
-    
-
-  const AVATAR = 'https://img.freepik.com/vector-premium/ilustracion-plana-vectorial-escala-grases-icono-perfil-usuario-avatar-persona-imagen-perfil-silueta-genero-neutral-apto-perfiles-redes-sociales-iconos-protectores-pantalla-como-plantillax9xa_719432-2210.jpg?semt=ais_hybrid&w=740&q=80';
+  function onSubmitComment(postId) {
+    if (!user) return;
+    const text = commentDraft[postId] ?? '';
+    setCommentError((prev) => ({ ...prev, [postId]: null }));
+    try {
+      addComment(postId, {
+        userId: user.id,
+        displayName: user.displayName,
+        handle: user.handle,
+        body: text,
+      });
+      setCommentDraft((prev) => ({ ...prev, [postId]: '' }));
+      syncInteractions(items, user.id);
+    } catch (err) {
+      setCommentError((prev) => ({
+        ...prev,
+        [postId]: err instanceof Error ? err.message : 'Error',
+      }));
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 pb-12">
-      {/* SECCIÓN 1: FORMULARIO */}
-      <div className="max-w-xl mx-auto mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <span>✨</span> Crear nueva publicación
-        </h2>
-
-        <form className="space-y-4" onSubmit={createConfession}>
-          {/* Selector del Tipo de Confesión */}
-          <div>
-            <label htmlFor="typePost" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Tipo de publicación
-            </label>
-            <select
-              id="typePost"
-              value={typePost}
-              onChange={(e) => setTypePost(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-red-500 focus:bg-white focus:ring-1 focus:ring-red-500"
-            >
-              <option value="Confesión">👤 Confesión</option>
-              <option value="Pregunta">❓ Pregunta</option>
-              <option value="Sugerencia">💡 Sugerencia</option>
-            </select>
-          </div>
-
-          {/* Textarea para el contenido */}
-          <div>
-            <label htmlFor="content" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              ¿Qué estás pensando?
-            </label>
-            <textarea
-              id="content"
-              rows={4}
-              maxLength={1000}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Escribe tu confesión aquí de manera respetuosa..."
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none transition resize-none focus:border-red-500 focus:bg-white focus:ring-1 focus:ring-red-500"
-            />
-            <div className="text-right text-xs text-gray-400 mt-1">
-              {content.length} / 1000 caracteres
-            </div>
-          </div>
-
-          {/* Botón de envío */}
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-red-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-red-700"
-          >
-            Publicar
-          </button>
-        </form>
-      </div>
-
-      {/* SECCIÓN 2: ESTADOS DE CARGA Y LISTA */}
-      {loading && items.length === 0 ? (
-        <div className="flex items-center justify-center gap-3 py-16 mt-6">
-          <span className="h-8 w-8 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
-          <span className="text-sm text-gray-500 font-medium">Cargando publicaciones…</span>
-        </div>
-      ) : loadError ? (
-        <div className="max-w-xl mx-auto mt-6 p-4 rounded-xl bg-red-50 text-red-700 text-sm font-medium text-center">
-          ⚠️ {loadError}
-        </div>
-      ) : items.length === 0 ? (
-        <p className="max-w-xl mx-auto mt-6 text-center text-sm text-gray-400 py-12 border border-dashed rounded-2xl">
-          Aún no hay publicaciones. ¡Sé el primero en compartir! 🚀
-        </p>
-      ) : (
-        <div className="space-y-4">
-          {items.map((c) => (
-            <article key={c.idPost || c.id} className="max-w-xl mx-auto mt-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md">
-              <div className="space-y-4">
-                
-                {/* Encabezado */}
-                <div className="flex items-center space-x-3">
-                  <img 
-                    src={AVATAR} 
-                    alt="Avatar" 
-                    className="h-10 w-10 rounded-xl border border-gray-200 object-cover shadow-sm" 
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-1.5">
-                      <span className="font-bold text-sm text-gray-900 truncate">{c.user || 'Anónimo'}</span>
-                      <span className="text-xs text-gray-400">·</span>
-                      <span className="text-xs text-gray-500 font-medium truncate">@{c.email || 'comunidad'}</span>
-                    </div>
-                    <p className="text-xs text-gray-400 truncate">Comunidad</p>
-                  </div>
-                  
-                  <span className="text-[11px] font-semibold px-2 py-1 bg-red-50 text-red-600 rounded-lg">
-                    {c.typePost || c.tipo}
-                  </span>
-                </div>
-
-                {/* Cuerpo de la Confesión */}
-                <div className="pl-1">
-                  <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap [overflow-wrap:anywhere]">
-                    {c.content || c.contenido}
-                  </p>
-                </div>
-
-                {/* Barra Central de Interacciones */}
-                <div className="flex items-center justify-between border-t border-gray-50 pt-3 mt-2">
-                  <div className="flex items-center space-x-4">
-                    <button type="button" className="flex items-center gap-1.5 text-sm text-gray-400 transition hover:text-red-500">
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M21 12a8 8 0 10-14 5.5L4 20l2.5-3A8 8 0 0021 12z" />
-                      </svg>
-                      <span className="text-xs font-medium tabular-nums">0</span>
-                    </button>
-
-                    <button type="button" className="flex items-center gap-1.5 text-sm text-gray-400 transition hover:text-red-500">
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M12 21s-6.716-4.432-9-8.5C.5 8.5 3 5 7.5 5c2.5 0 4.5 2 4.5 2S14 5 16.5 5 23.5 8.5 21 12.5 12 21 12 21z" />
-                      </svg>
-                      <span className="text-xs font-medium tabular-nums">0</span>
-                    </button>
-                  </div>
-
-                  <time className="text-xs text-gray-400 font-medium">
-                    {c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Reciente'}
-                  </time>
-                </div>
-
-                {/* Carrera */}
-                <div className="mt-2 border-t border-gray-100/70 pt-2 flex items-center justify-start gap-1">
-                  <span className="text-xs text-gray-400 font-medium">🎓 Carrera:</span>
-                  <span className="text-xs font-semibold text-red-600 truncate bg-red-50/50 px-2 py-0.5 rounded-md">
-                    {c.career || 'General'}
-                  </span>
-                </div>
-
+    <section
+      id="publicar"
+      className={`scroll-mt-24 ${isFeed ? 'pb-32 pt-2' : 'border-t border-theme pb-24 pt-10 sm:pt-16'}`}
+    >
+      <div className={`mx-auto px-4 sm:px-6 ${isFeed ? 'max-w-3xl lg:max-w-4xl' : 'max-w-6xl lg:px-8'}`}>
+        {isFeed ? (
+          <header className="feed-header">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🔥</span>
+              <div>
+                <h1 className="text-lg font-black text-utp-red">Comunidad UTP</h1>
+                <p className="text-xs text-theme-muted">Publicaciones · desplazate para ver mas</p>
               </div>
-            </article>
-          ))}
+            </div>
+          </header>
+        ) : (
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-2xl font-black tracking-tight text-theme sm:text-3xl">
+              Publicaciones de la comunidad
+            </h2>
+            <p className="mt-2 text-base text-theme-secondary">
+              Comparte, reacciona y comenta con respeto hacia la comunidad UTP.
+            </p>
+          </div>
+        )}
+
+        <div className={`mx-auto ${isFeed ? 'mt-4 max-w-full' : 'mt-10 max-w-4xl'}`}>
+          {user ? (
+            <form onSubmit={handleSubmit} className="card-utp p-6 sm:p-8">
+              <div className="flex gap-4">
+                <img
+                  src={AVATAR}
+                  alt=""
+                  className="size-12 shrink-0 rounded-2xl border border-theme object-cover shadow-sm"
+                />
+                <div className="min-w-0 flex-1 space-y-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-bold text-theme">{user.displayName}</span>
+                    <span className="text-sm font-semibold text-utp-red">@{user.handle}</span>
+                    <span className="text-xs text-theme-muted">· {user.career}</span>
+                  </div>
+                  <div>
+                    <label htmlFor="cf-category" className="block text-sm font-bold text-theme-secondary">
+                      Tipo de publicacion
+                    </label>
+                    <select id="cf-category" value={category} onChange={(e) => setCategory(e.target.value)} className="input-utp mt-1.5 text-sm">
+                      {CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {canPostAnonymously ? (
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={postAnon}
+                        onChange={(e) => setPostAnon(e.target.checked)}
+                        className="size-4 accent-utp-red rounded"
+                      />
+                      <span className="text-sm font-medium text-theme-secondary">
+                        🎭 Publicar anonimamente
+                      </span>
+                    </label>
+                  ) : null}
+                  <div>
+                    <label htmlFor="cf-body" className="block text-sm font-bold text-theme-secondary">
+                      Tu confesion
+                    </label>
+                    <textarea
+                      id="cf-body"
+                      required
+                      rows={5}
+                      maxLength={4000}
+                      value={body}
+                      onChange={(e) => setBody(e.target.value)}
+                      className="input-utp mt-1.5 resize-y px-4 py-3 text-sm"
+                      placeholder="Escribe aqui... sin datos personales de terceros ni amenazas."
+                    />
+                    <p className="mt-1 text-right text-xs text-theme-muted">{body.length} / 4000</p>
+                  </div>
+                  {formError ? <p className="alert-error">{formError}</p> : null}
+                  <button type="submit" disabled={submitting} className="btn-utp-primary w-full py-3 sm:w-auto sm:px-8">
+                    {submitting ? 'Publicando...' : '✨ Publicar confesion'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          ) : (
+            <div className="card-utp p-8 text-center">
+              <p className="text-4xl">👋</p>
+              <p className="mt-3 text-theme-secondary">
+                <Link to="/login" className="font-bold text-utp-red hover:underline">
+                  Inicia sesion
+                </Link>{' '}
+                o{' '}
+                <Link to="/register" className="font-bold text-utp-red hover:underline">
+                  registrate
+                </Link>{' '}
+                para publicar con tu cuenta.
+              </p>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+
+        <div className={`mx-auto mt-8 ${isFeed ? 'max-w-full' : 'mt-12 max-w-5xl'}`}>
+          <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="text-lg font-black text-theme">Ultimas en la comunidad</h3>
+              <p className="text-sm text-theme-muted">
+                Historias de alumnos de la Universidad Tecnologica del Peru
+              </p>
+            </div>
+            <button type="button" onClick={refresh} className="btn-utp-secondary self-start px-4 py-2 text-xs sm:self-auto">
+              ↻ Actualizar
+            </button>
+          </div>
+
+          {loadError ? <p className="alert-warn mb-6">{loadError}</p> : null}
+
+          {loading ? (
+            <div className="card-utp flex items-center justify-center gap-3 py-16">
+              <span className="h-8 w-8 animate-spin rounded-full border-2 border-utp-red border-t-transparent" />
+              <span className="text-sm text-theme-muted">Cargando confesiones...</span>
+            </div>
+          ) : items.length === 0 ? (
+            <p className="card-utp py-12 text-center text-sm text-theme-muted">
+              Aun no hay publicaciones. ¡Se el primero en compartir! 🚀
+            </p>
+          ) : (
+            <ul className="space-y-6">
+              {items.map((c) => {
+                const ix = interactionMap[c.id] || {
+                  likeCount: 0, repostCount: 0, commentCount: 0,
+                  comments: [], liked: false, reposted: false,
+                };
+                const commentsOpen = openComments[c.id];
+
+                return (
+                  <li key={c.id} className="post-card">
+                    <article>
+                      <div className="flex flex-wrap items-start gap-4">
+                        <img
+                          src={AVATAR}
+                          alt=""
+                          className="size-10 shrink-0 rounded-xl border border-theme object-cover"
+                        />
+                        <div className="min-w-0 flex-1 overflow-hidden">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <p className="truncate text-sm font-bold text-theme">{c.displayName}</p>
+                            {c.displayName === 'Anonimo UTP' ? <span className="shrink-0 text-xs" title="Anonimo">🎭</span> : null}
+                            <p className="truncate text-sm font-semibold text-utp-red">@{c.handle}</p>
+                            <time dateTime={c.createdAt} className="text-xs text-theme-muted" title={c.createdAt}>
+                              {formatRelativeTime(c.createdAt)}
+                            </time>
+                            <span className="category-pill ml-auto">{c.category}</span>
+                          </div>
+                          <p className="mt-0.5 text-xs text-theme-muted">{c.career}</p>
+                          <p className="mt-4 break-words text-sm leading-relaxed text-theme-secondary [overflow-wrap:anywhere] whitespace-pre-wrap">
+                            {c.body}
+                          </p>
+
+                          <div className="mt-5 flex flex-wrap items-center gap-6 border-t border-theme pt-4">
+                            <button
+                              type="button"
+                              onClick={() => setOpenComments((prev) => ({ ...prev, [c.id]: !prev[c.id] }))}
+                              className="flex items-center gap-2 text-sm text-theme-muted transition hover:text-utp-red"
+                              aria-label="Comentarios"
+                            >
+                              <IconBubble />
+                              <span className="tabular-nums">{ix.commentCount}</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!user}
+                              onClick={() => onToggleRepost(c.id)}
+                              className={`flex items-center gap-2 text-sm transition disabled:opacity-40 ${
+                                ix.reposted ? 'text-utp-green' : 'text-theme-muted hover:text-utp-green'
+                              }`}
+                              aria-label="Repost"
+                            >
+                              <IconRepost />
+                              <span className="tabular-nums">{ix.repostCount}</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!user}
+                              onClick={() => onToggleLike(c.id)}
+                              className={`flex items-center gap-2 text-sm transition disabled:opacity-40 ${
+                                ix.liked ? 'text-utp-red' : 'text-theme-muted hover:text-utp-red'
+                              }`}
+                              aria-label="Me gusta"
+                            >
+                              <IconHeart filled={ix.liked} />
+                              <span className="tabular-nums">{ix.likeCount}</span>
+                            </button>
+                            {isAdmin ? (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  await deleteConfessionById(c.id);
+                                  refresh();
+                                }}
+                                className="ml-auto flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-utp-red transition hover:bg-utp-red/10"
+                              >
+                                🗑️ Eliminar
+                              </button>
+                            ) : null}
+                          </div>
+
+                          {!user ? (
+                            <p className="mt-3 text-xs text-theme-muted">
+                              <Link to="/login" className="font-bold text-utp-red hover:underline">
+                                Entra
+                              </Link>{' '}
+                              para interactuar.
+                            </p>
+                          ) : null}
+
+                          {commentsOpen ? (
+                            <div className="mt-4 rounded-2xl border border-theme p-4" style={{ background: 'var(--color-bg-soft)' }}>
+                              <p className="text-xs font-bold uppercase tracking-wide text-theme-muted">
+                                Comentarios
+                              </p>
+                              <ul className="mt-3 max-h-52 space-y-3 overflow-y-auto">
+                                {ix.comments.length === 0 ? (
+                                  <li className="text-xs text-theme-muted">Sin comentarios aun.</li>
+                                ) : (
+                                  ix.comments.map((cm) => (
+                                    <li key={cm.id} className="text-sm">
+                                      <span className="font-bold text-theme">{cm.displayName}</span>{' '}
+                                      <span className="text-utp-red/80">@{cm.handle}</span>
+                                      <p className="mt-1 break-words text-theme-secondary [overflow-wrap:anywhere]">
+                                        {cm.body}
+                                      </p>
+                                    </li>
+                                  ))
+                                )}
+                              </ul>
+                              {user ? (
+                                <div className="mt-4 flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={commentDraft[c.id] ?? ''}
+                                    onChange={(e) =>
+                                      setCommentDraft((prev) => ({
+                                        ...prev,
+                                        [c.id]: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Escribe un comentario..."
+                                    className="input-utp min-w-0 flex-1 text-sm"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => onSubmitComment(c.id)}
+                                    className="btn-utp-primary shrink-0 px-4 py-2 text-xs"
+                                  >
+                                    Comentar
+                                  </button>
+                                </div>
+                              ) : null}
+                              {commentError[c.id] ? (
+                                <p className="mt-2 text-xs text-utp-red">{commentError[c.id]}</p>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    </article>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
+
+export default ConfessionsSection;

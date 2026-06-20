@@ -5,6 +5,7 @@ const getAllUsers = async (req, res) => {
   try {
     const users = await db.User.findAll({
       attributes: { exclude: ['passwordHash'] },
+      order: [['createdAt', 'DESC']],
     });
     res.status(200).json(users);
   } catch (err) {
@@ -87,4 +88,62 @@ const getAllConfessions = async (req, res) => {
   }
 };
 
-module.exports = { getAllUsers, createUser, postConfession, getAllConfessions, loginUser };
+const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (!['user', 'premium', 'admin'].includes(role)) {
+      return res.status(400).json({ message: 'Rol invalido.' });
+    }
+    const user = await db.User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    user.role = role;
+    await user.save();
+    const { passwordHash: _, ...publicUser } = user.toJSON();
+    res.status(200).json(publicUser);
+  } catch (err) {
+    res.status(500).json({ message: 'Error al actualizar rol', error: err.message });
+  }
+};
+
+const toggleUserBan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await db.User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    user.isBanned = !user.isBanned;
+    await user.save();
+    const { passwordHash: _, ...publicUser } = user.toJSON();
+    res.status(200).json(publicUser);
+  } catch (err) {
+    res.status(500).json({ message: 'Error al cambiar estado de baneo', error: err.message });
+  }
+};
+
+const setUserPremium = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { membershipExpiresAt } = req.body;
+    const user = await db.User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    user.role = 'premium';
+    user.membershipExpiresAt = membershipExpiresAt || new Date(Date.now() + 365 * 86400000).toISOString();
+    await user.save();
+    const { passwordHash: _, ...publicUser } = user.toJSON();
+    res.status(200).json(publicUser);
+  } catch (err) {
+    res.status(500).json({ message: 'Error al asignar premium', error: err.message });
+  }
+};
+
+module.exports = {
+  getAllUsers, createUser, loginUser,
+  postConfession, getAllConfessions,
+  updateUserRole, toggleUserBan, setUserPremium,
+};
