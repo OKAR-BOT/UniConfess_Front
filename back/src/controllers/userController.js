@@ -191,7 +191,7 @@ const updateProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado.' });
     }
-    if (req.user.id !== user.id && req.user.role !== 'admin') {
+    if (req.userId !== user.id && req.userRole !== 'admin') {
       return res.status(403).json({ message: 'No autorizado.' });
     }
     const allowed = ['displayName', 'bio', 'bannerColor', 'career'];
@@ -201,8 +201,11 @@ const updateProfile = async (req, res) => {
       }
     });
     await user.save();
+    const confCount = await db.Confession.count({ where: { userId: user.id } });
+    const commentCount = await db.Comment.count({ where: { userId: user.id } });
+    const likeCount = await db.Interaction.count({ where: { userId: user.id, type: 'like' } });
     const { passwordHash: _, ...publicUser } = user.toJSON();
-    res.status(200).json(publicUser);
+    res.status(200).json({ ...publicUser, stats: { confessions: confCount, comments: commentCount, likesGiven: likeCount } });
   } catch (err) {
     res.status(500).json({ message: 'Error al actualizar perfil', error: err.message });
   }

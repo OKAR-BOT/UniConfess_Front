@@ -73,10 +73,10 @@ const togglePin = async (req, res) => {
     if (!confession) {
       return res.status(404).json({ message: 'Confesion no encontrada.' });
     }
-    if (req.user.id !== confession.userId && req.user.role !== 'admin') {
+    if (req.userId !== confession.userId && req.userRole !== 'admin') {
       return res.status(403).json({ message: 'No autorizado.' });
     }
-    if (req.user.role !== 'premium' && req.user.role !== 'admin') {
+    if (req.userRole !== 'premium' && req.userRole !== 'admin') {
       return res.status(403).json({ message: 'Solo usuarios premium pueden fijar confesiones.' });
     }
     confession.isPinned = !confession.isPinned;

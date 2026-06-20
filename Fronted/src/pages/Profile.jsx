@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../service/api';
 import { formatRelativeTime } from '../utils/formatTime';
 
 export default function Profile() {
   const { handle } = useParams();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [confessions, setConfessions] = useState([]);
   const [tab, setTab] = useState('confessions');
@@ -155,16 +157,27 @@ export default function Profile() {
                 <>
                   {profile.bio && <p className="text-sm text-theme mt-1">{profile.bio}</p>}
                   <p className="text-sm text-theme mt-1">{profile.career}</p>
+                  {isOwner && <p className="text-xs text-theme-muted mt-1">{profile.email}</p>}
                   <p className="text-xs text-theme-muted mt-1">
                     Se unió el {new Date(profile.createdAt).toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
+                  {profile.role === 'premium' && profile.membershipExpiresAt && (
+                    <p className="text-xs text-amber-500 mt-1 font-semibold">
+                      Membresía premium hasta {new Date(profile.membershipExpiresAt).toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                  )}
                 </>
               )}
             </div>
             {isOwner && !editing && (
-              <button onClick={() => setEditing(true)} className="text-xs text-utp-red hover:underline shrink-0 mt-1">
-                Editar perfil
-              </button>
+              <div className="flex flex-col gap-1 shrink-0 mt-1">
+                <button onClick={() => setEditing(true)} className="text-xs text-utp-red hover:underline">
+                  Editar perfil
+                </button>
+                <button onClick={() => { logout(); navigate('/'); }} className="text-xs text-theme-muted hover:text-utp-red transition-colors">
+                  Cerrar sesión
+                </button>
+              </div>
             )}
           </div>
 
@@ -182,6 +195,13 @@ export default function Profile() {
               <p className="text-xs text-theme-muted">Likes dados</p>
             </div>
           </div>
+          {isOwner && user?.role === 'admin' && (
+            <div className="mt-4 pt-4 border-t border-theme-border">
+              <Link to="/admin" className="text-xs font-semibold text-utp-red hover:underline">
+                Panel de Administración
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

@@ -11,7 +11,6 @@ import About from './pages/About';
 import Membership from './pages/Membership';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import AdminLayout from './pages/admin/AdminLayout';
@@ -36,7 +35,6 @@ function AppRoutes() {
         <Route path="/membership" element={<Membership />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile/:handle" element={<Profile />} />
 
         <Route element={<ProtectedRoute requiredRole="admin" />}>
