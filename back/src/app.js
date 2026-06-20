@@ -1,44 +1,48 @@
 const express = require('express');
 const cors = require('cors');
-const session = require('express-session');
-require('dotenv').config(); // Carga las variables de entorno
+const path = require('path');
+const fs = require('fs');
+
+const envLocal = path.resolve(__dirname, '..', '.env.local');
+const envFile = fs.existsSync(envLocal) ? envLocal : path.resolve(__dirname, '..', '.env');
+require('dotenv').config({ path: envFile });
 
 const userRoutes = require('./routes/userRoutes');
+const confessionRoutes = require('./routes/confessionRoutes');
+const db = require('./models');
+const seedAdmin = require('./seeders/seed-admin');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
-
-// Configuración de la sesión
-app.use(session({
-  secret: 'clave_para_sesiones',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { 
-    secure: false,
-    httpOnly: true 
-  }
-}));
-
-app.use(cors());
+const PORT = process.env.PORT || 4000;
 
 app.use(cors({
-  origin: 'http://localhost:3000', // <-- REEMPLAZA ESTO por la URL exacta de tu frontend de React
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  credentials: true,
 }));
 
-// Middlewares
-app.use(express.json()); // Permite a Express entender JSON en las peticiones
+app.use(express.json());
 
-// Rutas Base
 app.use('/api/users', userRoutes);
+app.use('/api/confessions', confessionRoutes);
 
-// Ruta de prueba de salud del servidor (Health Check)
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK', message: 'Servidor corriendo perfectamente' });
+  res.status(200).json({ status: 'OK', message: 'Servidor corriendo perfectamente' });
 });
 
-// Iniciar Servidor
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor escuchando en el puerto ${PORT}`);
-});
+async function start() {
+  try {
+    await db.sequelize.sync();
+    await seedAdmin();
+    app.listen(PORT, () => {
+      console.log(`Servidor escuchando en el puerto ${PORT}`);
+    });
+  } catch (err) {
+    console.error('Error al iniciar servidor:', err);
+    process.exit(1);
+  }
+}
+
+start();
+
+module.exports = app;
