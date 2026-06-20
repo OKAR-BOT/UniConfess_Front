@@ -6,7 +6,7 @@ import { formatRelativeTime } from '../../utils/formatTime';
 const CATEGORIES = [
   'Todas',
   'General',
-  'Confesión',
+  'Confesion',
   'Chisme',
   'Campus / UTP',
   'Crush',
@@ -119,13 +119,13 @@ function AdminConfessions() {
 
   function handleDelete(postId) {
     setConfirm({
-      title: 'Eliminar confesión',
-      message: '¿Estás seguro de eliminar esta confesión? Esta acción no se puede deshacer.',
-      onConfirm: () => {
+      title: 'Eliminar confesion',
+      message: '¿Estas seguro de eliminar esta confesion? Esta accion no se puede deshacer.',
+      onConfirm: async () => {
         try {
-          deleteConfessionById(postId);
+          await deleteConfessionById(postId);
           setAllConfessions((prev) => prev.filter((c) => c.id !== postId));
-          showToast('Confesión eliminada', 'success');
+          showToast('Confesion eliminada', 'success');
           refresh();
         } catch (e) {
           showToast(e.message || 'Error al eliminar', 'error');
@@ -145,16 +145,16 @@ function AdminConfessions() {
       {confirm && <ConfirmModal {...confirm} onCancel={() => setConfirm(null)} />}
 
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-theme">Gestión de Confesiones</h1>
+        <h1 className="text-2xl font-black text-theme">Gestion de Confesiones</h1>
         <p className="mt-1 text-sm text-theme-secondary">
-          {filtered.length} confesión{filtered.length !== 1 ? 'es' : ''}
+          {filtered.length} confesion{filtered.length !== 1 ? 'es' : ''}
         </p>
       </div>
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row">
         <input
           type="text"
-          placeholder="Buscar por contenido o autor…"
+          placeholder="Buscar por contenido o autor..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           className="input-utp flex-1 px-4 py-2.5 text-sm"
@@ -184,8 +184,8 @@ function AdminConfessions() {
           </p>
           <p className="mt-1 text-sm text-theme-muted">
             {search || filterCategory !== 'Todas'
-              ? 'Intenta con otros términos o filtros.'
-              : 'Aún no se ha publicado ninguna confesión.'}
+              ? 'Intenta con otros terminos o filtros.'
+              : 'Aun no se ha publicado ninguna confesion.'}
           </p>
           {(search || filterCategory !== 'Todas') && (
             <button
@@ -204,10 +204,10 @@ function AdminConfessions() {
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <th className="px-4 py-3 font-bold uppercase tracking-wider text-theme-muted text-xs">Autor</th>
-                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-theme-muted text-xs">Categoría</th>
+                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-theme-muted text-xs">Categoria</th>
                   <th className="px-4 py-3 font-bold uppercase tracking-wider text-theme-muted text-xs">Contenido</th>
                   <th className="px-4 py-3 font-bold uppercase tracking-wider text-theme-muted text-xs hidden sm:table-cell">Fecha</th>
-                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-theme-muted text-xs">Acción</th>
+                  <th className="px-4 py-3 font-bold uppercase tracking-wider text-theme-muted text-xs">Accion</th>
                 </tr>
               </thead>
               <tbody className="divide-y" style={{ borderColor: 'var(--color-border)' }}>

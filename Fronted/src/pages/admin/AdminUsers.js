@@ -8,7 +8,7 @@ function Toast({ message, type, onClose }) {
   }, [onClose]);
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-2xl animate-bounce-in ${
+    <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-2xl ${
       type === 'success' ? 'bg-utp-green' : 'bg-utp-red'
     }`}>
       <span>{type === 'success' ? '✅' : '❌'}</span>
@@ -69,13 +69,18 @@ function AdminUsers() {
     setToast({ message, type });
   }, []);
 
-  const loadUsers = useCallback(() => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
-      setAllUsers(getAllUsers());
+    try {
+      const all = await getAllUsers();
+      setAllUsers(all);
+    } catch {
+      setAllUsers([]);
+      showToast('Error al cargar usuarios', 'error');
+    } finally {
       setLoading(false);
-    }, 400);
-  }, [getAllUsers]);
+    }
+  }, [getAllUsers, showToast]);
 
   useEffect(() => {
     loadUsers();
@@ -105,14 +110,14 @@ function AdminUsers() {
     if (safePage !== page) setPage(safePage);
   }, [safePage, page]);
 
-  function handleRoleChange(userId, newRole) {
+  async function handleRoleChange(userId, newRole) {
     setConfirm({
       title: 'Cambiar rol',
-      message: `¿Estás seguro de cambiar el rol de este usuario a "${newRole}"?`,
+      message: `¿Estas seguro de cambiar el rol de este usuario a "${newRole}"?`,
       confirmLabel: 'Cambiar',
-      onConfirm: () => {
+      onConfirm: async () => {
         try {
-          updateUserRole(userId, newRole);
+          await updateUserRole(userId, newRole);
           showToast(`Rol actualizado a ${newRole}`, 'success');
           loadUsers();
           refresh();
@@ -124,15 +129,15 @@ function AdminUsers() {
     });
   }
 
-  function handleBanToggle(userId, currentBanned) {
+  async function handleBanToggle(userId, currentBanned) {
     const action = currentBanned ? 'desbanear' : 'banear';
     setConfirm({
       title: `${currentBanned ? 'Desbanear' : 'Banear'} usuario`,
-      message: `¿Estás seguro de ${action} a este usuario?`,
+      message: `¿Estas seguro de ${action} a este usuario?`,
       confirmLabel: currentBanned ? 'Desbanear' : 'Banear',
-      onConfirm: () => {
+      onConfirm: async () => {
         try {
-          toggleUserBan(userId);
+          await toggleUserBan(userId);
           showToast(`Usuario ${currentBanned ? 'desbaneado' : 'baneado'}`, 'success');
           loadUsers();
           refresh();
@@ -150,7 +155,7 @@ function AdminUsers() {
       {confirm && <ConfirmModal {...confirm} onCancel={() => setConfirm(null)} />}
 
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-theme">Gestión de Usuarios</h1>
+        <h1 className="text-2xl font-black text-theme">Gestion de Usuarios</h1>
         <p className="mt-1 text-sm text-theme-secondary">
           {filtered.length} usuario{filtered.length !== 1 ? 's' : ''}{search || filterRole !== 'all' ? ' filtrados' : ''}
         </p>
@@ -159,7 +164,7 @@ function AdminUsers() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row">
         <input
           type="text"
-          placeholder="Buscar por nombre, usuario o correo…"
+          placeholder="Buscar por nombre, usuario o correo..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           className="input-utp flex-1 px-4 py-2.5 text-sm"
@@ -188,8 +193,8 @@ function AdminUsers() {
           </p>
           <p className="mt-1 text-sm text-theme-muted">
             {search || filterRole !== 'all'
-              ? 'Intenta con otros términos o filtros.'
-              : 'Aún no se ha registrado ningún usuario.'}
+              ? 'Intenta con otros terminos o filtros.'
+              : 'Aun no se ha registrado ningun usuario.'}
           </p>
           {(search || filterRole !== 'all') && (
             <button

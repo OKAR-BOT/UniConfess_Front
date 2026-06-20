@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const confessionController = require('../controllers/confessionController');
+const { verifyToken } = require('../middlewares/auth');
+const { authorize } = require('../middlewares/roles');
 
 router.get('/', confessionController.getAllConfessions);
-router.post('/', confessionController.createConfession);
+router.post('/', verifyToken, confessionController.createConfession);
+router.delete('/:id', verifyToken, authorize('admin'), confessionController.deleteConfession);
 
 module.exports = router;

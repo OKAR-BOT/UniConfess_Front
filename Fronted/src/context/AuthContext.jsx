@@ -1,98 +1,92 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react';
-import axios from 'axios';
-import {
-  getCurrentUser,
-  loginUser,
-  logoutUser,
-  registerUser,
-  establishSessionFromBackend,
-  isAdmin,
-  isPremium,
-  canPostAnonymously,
-  getAllUsers,
-  updateUserRole,
-  toggleUserBan,
-  deleteConfessionById,
-  setUserPremium,
-  ensureAdminSeeded,
-} from '../service/localAuth';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { apiRequest, isTokenExpired } from '../service/api';
 
-/** @typedef {import('../service/localAuth').PublicUser} PublicUser */
-
-const AuthContext = createContext(
-  /** @type {{ user: PublicUser | null, login: Function, register: Function, logout: Function, refresh: Function } | null} */ (
-    null
-  )
-);
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    ensureAdminSeeded();
-    return getCurrentUser();
+    try {
+      const raw = localStorage.getItem('uconfess_user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
   });
 
   const refresh = useCallback(() => {
-    setUser(getCurrentUser());
-  }, []);
-
-  const login = useCallback(async (email, password) => {
-    try {
-      const respuesta = await axios.post('http://localhost:8080/api/users/login', {
-        email,
-        password,
-      });
-      const u = establishSessionFromBackend(respuesta.data.user);
-      setUser(u);
-      return u;
-    } catch (error) {
-      if (error.response?.status === 401) {
-        throw new Error(error.response.data?.message || 'Credenciales incorrectas.');
-      }
-      if (error.response) {
-        throw new Error(error.response.data?.message || 'Error al iniciar sesión.');
-      }
-      const u = await loginUser(email, password);
-      setUser(u);
-      return u;
+    if (!isTokenExpired()) {
+      apiRequest('GET', 'auth/me', null, true)
+        .then((u) => {
+          setUser(u);
+          localStorage.setItem('uconfess_user', JSON.stringify(u));
+        })
+        .catch(() => {
+          setUser(null);
+          localStorage.removeItem('uconfess_user');
+          localStorage.removeItem('uconfess_jwt');
+        });
+    } else {
+      setUser(null);
+      localStorage.removeItem('uconfess_user');
+      localStorage.removeItem('uconfess_jwt');
     }
   }, []);
 
-  const register = useCallback(async (data) => {
-    const u = await registerUser(data);
-    setUser(u);
-    return u;
+  const login = useCallback(async (email, password) => {
+    const data = await apiRequest('POST', 'auth/login', { email, password });
+    localStorage.setItem('uconfess_jwt', data.token);
+    localStorage.setItem('uconfess_user', JSON.stringify(data.user));
+    setUser(data.user);
+    return data.user;
+  }, []);
+
+  const register = useCallback(async (input) => {
+    const data = await apiRequest('POST', 'auth/register', input);
+    localStorage.setItem('uconfess_jwt', data.token);
+    localStorage.setItem('uconfess_user', JSON.stringify(data.user));
+    setUser(data.user);
+    return data.user;
   }, []);
 
   const logout = useCallback(() => {
-    logoutUser();
+    localStorage.removeItem('uconfess_jwt');
+    localStorage.removeItem('uconfess_user');
     setUser(null);
   }, []);
 
-  const value = useMemo(
-    () => ({
-      user,
-      login,
-      register,
-      logout,
-      refresh,
-      isAdmin: isAdmin(user),
-      isPremium: isPremium(user),
-      canPostAnonymously: canPostAnonymously(user),
-      getAllUsers,
-      updateUserRole,
-      toggleUserBan,
-      deleteConfessionById,
-      setUserPremium,
-      ensureAdminSeeded,
-    }),
-    [user, login, register, logout, refresh]
-  );
+  const isAdmin = useMemo(() => user?.role === 'admin', [user]);
+  const isPremium = useMemo(() => user?.role === 'premium', [user]);
+  const canPostAnonymously = useMemo(() => user?.role === 'premium' || user?.role === 'admin', [user]);
+
+  const getAllUsers = useCallback(async () => {
+    return apiRequest('GET', 'users', null, true);
+  }, []);
+
+  const updateUserRole = useCallback(async (userId, role) => {
+    return apiRequest('PUT', `users/${userId}/role`, { role }, true);
+  }, []);
+
+  const toggleUserBan = useCallback(async (userId) => {
+    return apiRequest('PUT', `users/${userId}/ban`, {}, true);
+  }, []);
+
+  const setUserPremium = useCallback(async (userId, expiryDate) => {
+    return apiRequest('PUT', `users/${userId}/premium`, { membershipExpiresAt: expiryDate }, true);
+  }, []);
+
+  const deleteConfessionById = useCallback(async (postId) => {
+    return apiRequest('DELETE', `confessions/${postId}`, null, true);
+  }, []);
+
+  const value = useMemo(() => ({
+    user, login, register, logout, refresh,
+    isAdmin, isPremium, canPostAnonymously,
+    getAllUsers, updateUserRole, toggleUserBan,
+    deleteConfessionById, setUserPremium,
+  }), [user, login, register, logout, refresh,
+      isAdmin, isPremium, canPostAnonymously,
+      getAllUsers, updateUserRole, toggleUserBan,
+      deleteConfessionById, setUserPremium]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

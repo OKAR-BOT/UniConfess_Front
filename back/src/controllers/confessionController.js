@@ -14,22 +14,29 @@ const getAllConfessions = async (req, res) => {
 const createConfession = async (req, res) => {
   try {
     const { userId, displayName, handle, career, body, category } = req.body;
-    if (!userId) {
+    const effectiveUserId = userId || req.userId;
+    if (!effectiveUserId) {
       return res.status(400).json({ message: 'userId es requerido' });
     }
-    const user = await db.User.findByPk(userId);
+    const user = await db.User.findByPk(effectiveUserId);
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
     if (user.isBanned) {
       return res.status(403).json({ message: 'Tu cuenta ha sido suspendida.' });
     }
+    if (!body || body.trim().length < 10) {
+      return res.status(400).json({ message: 'La publicacion debe tener al menos 10 caracteres.' });
+    }
+    if (body.length > 4000) {
+      return res.status(400).json({ message: 'Maximo 4000 caracteres.' });
+    }
     const confession = await db.Confession.create({
-      userId,
+      userId: effectiveUserId,
       displayName: displayName || user.displayName,
       handle: handle || user.handle,
       career: career || user.career || '',
-      body,
+      body: body.trim(),
       category: category || 'General',
     });
     res.status(201).json(confession);
@@ -38,4 +45,18 @@ const createConfession = async (req, res) => {
   }
 };
 
-module.exports = { getAllConfessions, createConfession };
+const deleteConfession = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const confession = await db.Confession.findByPk(id);
+    if (!confession) {
+      return res.status(404).json({ message: 'Confesion no encontrada.' });
+    }
+    await confession.destroy();
+    res.status(200).json({ message: 'Confesion eliminada.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al eliminar confesion', error: err.message });
+  }
+};
+
+module.exports = { getAllConfessions, createConfession, deleteConfession };
