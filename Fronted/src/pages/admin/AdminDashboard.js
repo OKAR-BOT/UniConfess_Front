@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { listConfessions } from '../../service/confessionsApi';
 
 function SkeletonStat() {
   return (
@@ -31,28 +32,33 @@ function AdminDashboard() {
   const [counts, setCounts] = useState({ total: 0, premium: 0, admin: 0, banned: 0, confessions: 0 });
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const all = getAllUsers();
-      setUsers(all);
-      const confKey = 'uconfess_confessions_v1';
-      let confCount = 0;
+    let cancelled = false;
+    async function load() {
       try {
-        const raw = localStorage.getItem(confKey);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) confCount = parsed.length;
+        const [all, confs] = await Promise.all([
+          getAllUsers(),
+          listConfessions(),
+        ]);
+        if (cancelled) return;
+        setUsers(all);
+        setCounts({
+          total: all.length,
+          premium: all.filter((u) => u.role === 'premium').length,
+          admin: all.filter((u) => u.role === 'admin').length,
+          banned: all.filter((u) => u.isBanned).length,
+          confessions: Array.isArray(confs) ? confs.length : 0,
+        });
+      } catch {
+        if (!cancelled) {
+          setUsers([]);
+          setCounts({ total: 0, premium: 0, admin: 0, banned: 0, confessions: 0 });
         }
-      } catch {}
-      setCounts({
-        total: all.length,
-        premium: all.filter((u) => u.role === 'premium').length,
-        admin: all.filter((u) => u.role === 'admin').length,
-        banned: all.filter((u) => u.isBanned).length,
-        confessions: confCount,
-      });
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    const timer = setTimeout(load, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [getAllUsers]);
 
   const recentUsers = users.slice(-5).reverse();
@@ -78,7 +84,7 @@ function AdminDashboard() {
   }
 
   const STAT_CARDS = [
-    { label: 'Usuarios totales', value: counts.total, icon: '👥', color: 'text-utp-red' },
+    { label: 'Usuarios totales', value: counts.total, icon: '👤', color: 'text-utp-red' },
     { label: 'Premium', value: counts.premium, icon: '⭐', color: 'text-utp-green' },
     { label: 'Confesiones', value: counts.confessions, icon: '📝', color: 'text-utp-red' },
     { label: 'Baneados', value: counts.banned, icon: '🚫', color: 'text-theme-muted' },
@@ -87,7 +93,7 @@ function AdminDashboard() {
   return (
     <div className="p-6 sm:p-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-black text-theme sm:text-3xl">Panel de Administración</h1>
+        <h1 className="text-2xl font-black text-theme sm:text-3xl">Panel de Administracion</h1>
         <p className="mt-1 text-sm text-theme-secondary">Resumen general de la plataforma UConfess</p>
       </div>
 
@@ -121,12 +127,12 @@ function AdminDashboard() {
       </div>
 
       <div className="card-utp mt-8 p-6">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-theme-muted">Últimos registrados</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider text-theme-muted">Ultimos registrados</h2>
         {recentUsers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <span className="text-4xl opacity-30">👥</span>
-            <p className="mt-3 text-sm text-theme-muted">No hay usuarios registrados aún.</p>
-            <p className="text-xs text-theme-muted">Los usuarios aparecerán aquí cuando se registren.</p>
+            <span className="text-4xl opacity-30">👤</span>
+            <p className="mt-3 text-sm text-theme-muted">No hay usuarios registrados aun.</p>
+            <p className="text-xs text-theme-muted">Los usuarios apareceran aqui cuando se registren.</p>
           </div>
         ) : (
           <div className="mt-4 divide-y" style={{ borderColor: 'var(--color-border)' }}>

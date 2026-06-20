@@ -76,7 +76,7 @@ function Home() {
                 Crear cuenta gratis
               </Link>
             ) : (
-              <Link to="/dashboard" className="btn-utp-ghost w-full max-w-xs px-8 py-4 sm:w-auto">
+              <Link to={`/profile/${user.handle}`} className="btn-utp-ghost w-full max-w-xs px-8 py-4 sm:w-auto">
                 Mi cuenta →
               </Link>
             )}

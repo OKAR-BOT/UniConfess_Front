@@ -8,3 +8,18 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# Environment files (local overrides)
+.env.local
+*.local
+
+# Do not commit sensitive env files
+back/.env
+
+# Database files (SQLite)
+*.sqlite
+*.sqlite-journal
+back/data/
+
+# Auto-generated Tailwind output
+Fronted/src/index.css

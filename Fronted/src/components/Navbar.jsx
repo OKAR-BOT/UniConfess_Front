@@ -89,7 +89,7 @@ function Navbar() {
               ) : null}
 
               <Link
-                to="/dashboard"
+                to={`/profile/${user?.handle}`}
                 className="nav-link font-semibold"
                 style={{ '--animate-duration': '0.4s' }}
                 onClick={(e) => playAnimation(e.currentTarget, 'animate__rubberBand')}
