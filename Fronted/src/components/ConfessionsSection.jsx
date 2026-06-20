@@ -74,8 +74,8 @@ function ReplyThread({ comment, postId, depth, userId, isAdmin, onRefresh }) {
   return (
     <div className="border-l-2 border-theme/20 pl-3 ml-2 mt-2">
       <div className="text-sm">
-        <span className="font-bold text-theme">{comment.displayName}</span>{' '}
-        <span className="text-utp-red/80">@{comment.handle}</span>
+        <span className="font-bold text-theme">{comment.displayName}</span>
+        <span className="text-xs text-theme-muted ml-1">@{comment.handle}</span>
       </div>
       <p className="mt-0.5 text-sm text-theme-secondary break-words">{comment.body}</p>
       <div className="flex gap-3 mt-1">
@@ -114,6 +114,13 @@ function ReplyThread({ comment, postId, depth, userId, isAdmin, onRefresh }) {
             className="btn-utp-primary shrink-0 px-3 py-1 text-xs"
           >
             {replying ? '...' : 'Responder'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setShowReply(false); setReplyText(''); }}
+            className="btn-utp-secondary shrink-0 px-3 py-1 text-xs"
+          >
+            Cancelar
           </button>
         </div>
       )}
@@ -336,7 +343,7 @@ function ConfessionsSection({ variant = 'default' }) {
                 <div className="min-w-0 flex-1 space-y-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-bold text-theme">{user.displayName}</span>
-                    <span className="text-sm font-semibold text-utp-red">@{user.handle}</span>
+                    <span className="text-xs text-theme-muted">@{user.handle}</span>
                     <span className="text-xs text-theme-muted">· {user.career}</span>
                   </div>
                   <div>
@@ -404,14 +411,14 @@ function ConfessionsSection({ variant = 'default' }) {
                       <div className="flex flex-wrap items-start gap-4">
                         <img src={AVATAR} alt="" className="size-10 shrink-0 rounded-xl border border-theme object-cover" />
                         <div className="min-w-0 flex-1 overflow-hidden">
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <p className="truncate text-sm font-bold text-theme">{c.displayName}</p>
+                            <p className="truncate text-xs text-theme-muted">@{c.handle}</p>
                             {c.displayName === 'Anonimo UTP' ? <span className="shrink-0 text-xs" title="Anonimo">🎭</span> : null}
-                            <p className="truncate text-sm font-semibold text-utp-red">@{c.handle}</p>
-                            <time dateTime={c.createdAt} className="text-xs text-theme-muted" title={c.createdAt}>
+                            <time dateTime={c.createdAt} className="text-xs text-theme-muted ml-auto" title={c.createdAt}>
                               {formatRelativeTime(c.createdAt)}
                             </time>
-                            <span className="category-pill ml-auto">{c.category}</span>
+                            <span className="category-pill">{c.category}</span>
                           </div>
                           <p className="mt-0.5 text-xs text-theme-muted">{c.career}</p>
                           <p className="mt-4 break-words text-sm leading-relaxed text-theme-secondary [overflow-wrap:anywhere] whitespace-pre-wrap">
