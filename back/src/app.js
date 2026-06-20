@@ -10,6 +10,7 @@ const confessionRoutes = require('./routes/confessionRoutes');
 const interactionRoutes = require('./routes/interactionRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const db = require('./models');
+const migrate = require('./migrate');
 const seedAdmin = require('./seeders/seed-admin');
 
 const app = express();
@@ -35,6 +36,7 @@ app.get('/health', (req, res) => {
 
 async function start() {
   try {
+    await migrate();
     await db.sequelize.sync();
     await seedAdmin();
     app.listen(PORT, () => {
