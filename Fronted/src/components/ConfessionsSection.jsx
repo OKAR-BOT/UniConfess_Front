@@ -74,8 +74,8 @@ function ReplyThread({ comment, postId, depth, userId, isAdmin, onRefresh }) {
   return (
     <div className="border-l-2 border-theme/20 pl-3 ml-2 mt-2">
       <div className="text-sm">
-        <span className="font-bold text-theme">{comment.displayName}</span>
-        <span className="text-xs text-theme-muted ml-1">@{comment.handle}</span>
+        <Link to={`/profile/${comment.handle}`} className="font-bold text-theme hover:text-utp-red transition-colors">{comment.displayName}</Link>
+        <Link to={`/profile/${comment.handle}`} className="text-xs text-theme-muted ml-1 hover:text-utp-red transition-colors">@{comment.handle}</Link>
       </div>
       <p className="mt-0.5 text-sm text-theme-secondary break-words">{comment.body}</p>
       <div className="flex gap-3 mt-1">
@@ -412,8 +412,8 @@ function ConfessionsSection({ variant = 'default' }) {
                         <img src={AVATAR} alt="" className="size-10 shrink-0 rounded-xl border border-theme object-cover" />
                         <div className="min-w-0 flex-1 overflow-hidden">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <p className="truncate text-sm font-bold text-theme">{c.displayName}</p>
-                            <p className="truncate text-xs text-theme-muted">@{c.handle}</p>
+                            <Link to={`/profile/${c.handle}`} className="truncate text-sm font-bold text-theme hover:text-utp-red transition-colors">{c.displayName}</Link>
+                            <Link to={`/profile/${c.handle}`} className="truncate text-xs text-theme-muted hover:text-utp-red transition-colors">@{c.handle}</Link>
                             {c.displayName === 'Anonimo UTP' ? <span className="shrink-0 text-xs" title="Anonimo">🎭</span> : null}
                             <time dateTime={c.createdAt} className="text-xs text-theme-muted ml-auto" title={c.createdAt}>
                               {formatRelativeTime(c.createdAt)}

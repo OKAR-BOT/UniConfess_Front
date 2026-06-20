@@ -142,8 +142,48 @@ const setUserPremium = async (req, res) => {
   }
 };
 
+const getProfileByHandle = async (req, res) => {
+  try {
+    const { handle } = req.params;
+    const user = await db.User.findOne({
+      where: { handle: handle.toLowerCase() },
+      attributes: { exclude: ['passwordHash'] },
+    });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    const confCount = await db.Confession.count({ where: { userId: user.id } });
+    const commentCount = await db.Comment.count({ where: { userId: user.id } });
+    const likeCount = await db.Interaction.count({ where: { userId: user.id, type: 'like' } });
+    res.status(200).json({
+      ...user.toJSON(),
+      stats: { confessions: confCount, comments: commentCount, likesGiven: likeCount },
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al obtener perfil', error: err.message });
+  }
+};
+
+const getUserConfessions = async (req, res) => {
+  try {
+    const { handle } = req.params;
+    const user = await db.User.findOne({ where: { handle: handle.toLowerCase() } });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    const confessions = await db.Confession.findAll({
+      where: { userId: user.id },
+      order: [['createdAt', 'DESC']],
+    });
+    res.status(200).json(confessions);
+  } catch (err) {
+    res.status(500).json({ message: 'Error al obtener confesiones', error: err.message });
+  }
+};
+
 module.exports = {
   getAllUsers, createUser, loginUser,
   postConfession, getAllConfessions,
   updateUserRole, toggleUserBan, setUserPremium,
+  getProfileByHandle, getUserConfessions,
 };
