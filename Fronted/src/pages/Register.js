@@ -1,42 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CareerSearchSelect from '../components/CareerSearchSelect';
 import MeshBackground from '../components/MeshBackground';
+import axios from 'axios';
 
 export default function Register() {
-  const { register } = useAuth();
-  const navigate = useNavigate();
-  const [displayName, setDisplayName] = useState('');
-  const [handle, setHandle] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [career, setCareer] = useState('');
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+    const [nombre, setNombre] = useState('');
+    const [usuario, setUsuario] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [career, setCareer] = useState('');
+    const [error, setError] = useState('');
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!career) {
-      setError('Selecciona tu carrera de la lista UTP.');
-      return;
-    }
-    setError(null);
-    setLoading(true);
-    try {
-      await register({ displayName, handle, email, password, career });
-      navigate('/feed', { replace: true });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo registrar.');
-    } finally {
-      setLoading(false);
-    }
-  }
+    const [loading, setLoading] = useState(false);
+
+    const manejoEnvio = async (e) => {
+      e.preventDefault();
+
+      // creamos al objeto del usuario
+      const nuevoUsuario = {
+        nameuser: nombre,
+        user: usuario,
+        email: email,
+        password: password,
+        career: career,
+      };
+
+      try {
+        setLoading(true);
+        const respuesta = await axios.post('http://localhost:8080/api/users', nuevoUsuario);
+
+        // Limpiamos el formulario
+      setNombre('');
+      setEmail('');
+      setPassword('');
+      setCareer('');
+      } catch (error) {
+        setError('Error al crear la cuenta. Inténtalo de nuevo.', error);
+      }
+  };
 
   return (
     <div className="relative flex min-h-[calc(100vh-4.25rem)] items-center justify-center px-4 py-12">
       <MeshBackground variant="auth" />
-      <form onSubmit={handleSubmit} className="card-utp relative z-10 w-full max-w-md p-8 shadow-xl">
+      <form onSubmit={manejoEnvio} className="card-utp relative z-10 w-full max-w-md p-8 shadow-xl">
         <h1 className="text-2xl font-black text-theme">Únete a la comunidad</h1>
         <p className="mt-1 text-sm text-theme-secondary">
           Tu nombre y usuario serán visibles en tus publicaciones.
@@ -50,8 +58,8 @@ export default function Register() {
             <input
               id="reg-name"
               required
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
               className="input-utp mt-1"
               placeholder="Ej. María Pérez"
               autoComplete="name"
@@ -64,8 +72,8 @@ export default function Register() {
             <input
               id="reg-handle"
               required
-              value={handle}
-              onChange={(e) => setHandle(e.target.value.replace(/\s/g, ''))}
+              value={usuario}
+              onChange={(e) => setUsuario(e.target.value.replace(/\s/g, ''))}
               className="input-utp mt-1"
               placeholder="maria_utp"
               autoComplete="username"
@@ -105,8 +113,8 @@ export default function Register() {
 
         {error ? <p className="alert-error mt-4">{error}</p> : null}
 
-        <button type="submit" disabled={loading} className="btn-utp-primary mt-6 w-full py-3.5">
-          {loading ? 'Creando…' : 'Crear mi cuenta →'}
+        <button type="submit" className="btn-utp-primary mt-6 w-full py-3.5">
+          {'Crear mi cuenta →'}
         </button>
 
         <p className="mt-6 text-center text-sm text-theme-muted">

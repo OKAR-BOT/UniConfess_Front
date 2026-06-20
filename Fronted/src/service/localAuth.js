@@ -184,6 +184,41 @@ export async function loginUser(email, password) {
 export function logoutUser() {
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem('isAuthenticated');
+  localStorage.removeItem('usuario');
+}
+
+/**
+ * @param {{ id: number | string, nameUser: string, user: string, email: string, career?: string }} backendUser
+ * @returns {PublicUser}
+ */
+export function establishSessionFromBackend(backendUser) {
+  const publicUser = /** @type {PublicUser} */ ({
+    id: String(backendUser.id),
+    email: backendUser.email,
+    displayName: backendUser.nameUser,
+    handle: backendUser.user,
+    career: backendUser.career || '',
+    role: 'user',
+    isAnonymous: false,
+    isBanned: false,
+    membershipExpiresAt: null,
+    createdAt: new Date().toISOString(),
+  });
+
+  const users = readUsers();
+  const idx = users.findIndex((u) => u.email === publicUser.email);
+  const stubRecord = { ...publicUser, passwordHash: '' };
+  if (idx === -1) {
+    writeUsers([...users, stubRecord]);
+  } else {
+    users[idx] = { ...users[idx], ...stubRecord };
+    writeUsers(users);
+  }
+
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: publicUser.id }));
+  localStorage.removeItem('isAuthenticated');
+  localStorage.removeItem('usuario');
+  return publicUser;
 }
 
 /** @returns {PublicUser | null} */

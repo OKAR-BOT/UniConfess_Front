@@ -74,7 +74,7 @@ function Navbar() {
           {user ? (
             <>
               <span className="hidden shrink-0 px-1 text-xs text-white/75 sm:inline">
-                @{user.handle}
+                @{user.handle || user.email}
               </span>
 
               {isAdmin ? (
@@ -111,11 +111,11 @@ function Navbar() {
             </>
           ) : (
             <Link
-              to="/login"
-              className="ml-1 rounded-xl bg-white px-4 py-2 text-sm font-bold text-utp-red shadow-lg transition hover:scale-105 hover:shadow-xl"
-              style={{ '--animate-duration': '0.4s' }}
-              onClick={(e) => playAnimation(e.currentTarget, 'animate__pulse')}
-            >
+            to="/login"
+            className="ml-1 rounded-xl bg-white px-4 py-2 text-sm font-bold text-utp-red shadow-lg transition hover:scale-105 hover:shadow-xl"
+            style={{ '--animate-duration': '0.4s' }}
+            onClick={(e) => playAnimation(e.currentTarget, 'animate__pulse')}
+              >
               Login
             </Link>
           )}

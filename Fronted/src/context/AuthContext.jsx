@@ -5,11 +5,13 @@ import {
   useMemo,
   useState,
 } from 'react';
+import axios from 'axios';
 import {
   getCurrentUser,
   loginUser,
   logoutUser,
   registerUser,
+  establishSessionFromBackend,
   isAdmin,
   isPremium,
   canPostAnonymously,
@@ -40,9 +42,25 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, password) => {
-    const u = await loginUser(email, password);
-    setUser(u);
-    return u;
+    try {
+      const respuesta = await axios.post('http://localhost:8080/api/users/login', {
+        email,
+        password,
+      });
+      const u = establishSessionFromBackend(respuesta.data.user);
+      setUser(u);
+      return u;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error(error.response.data?.message || 'Credenciales incorrectas.');
+      }
+      if (error.response) {
+        throw new Error(error.response.data?.message || 'Error al iniciar sesión.');
+      }
+      const u = await loginUser(email, password);
+      setUser(u);
+      return u;
+    }
   }, []);
 
   const register = useCallback(async (data) => {
