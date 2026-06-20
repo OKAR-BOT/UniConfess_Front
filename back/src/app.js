@@ -1,15 +1,14 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
 
-const envLocal = path.resolve(__dirname, '..', '.env.local');
-const envFile = fs.existsSync(envLocal) ? envLocal : path.resolve(__dirname, '..', '.env');
-require('dotenv').config({ path: envFile });
+
+require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const confessionRoutes = require('./routes/confessionRoutes');
+const interactionRoutes = require('./routes/interactionRoutes');
+const commentRoutes = require('./routes/commentRoutes');
 const db = require('./models');
 const seedAdmin = require('./seeders/seed-admin');
 
@@ -27,6 +26,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/confessions', confessionRoutes);
+app.use('/api/confessions', commentRoutes);
+app.use('/api/interactions', interactionRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Servidor corriendo perfectamente' });
