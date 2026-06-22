@@ -34,14 +34,24 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const data = await apiRequest('POST', 'auth/login', { email, password });
+    if (data?.token && data?.user) {
+      localStorage.setItem('uconfess_jwt', data.token);
+      localStorage.setItem('uconfess_user', JSON.stringify(data.user));
+      setUser(data.user);
+    }
+    return data;
+  }, []);
+
+  const register = useCallback(async (input) => {
+    const data = await apiRequest('POST', 'auth/register', input);
     localStorage.setItem('uconfess_jwt', data.token);
     localStorage.setItem('uconfess_user', JSON.stringify(data.user));
     setUser(data.user);
     return data.user;
   }, []);
 
-  const register = useCallback(async (input) => {
-    const data = await apiRequest('POST', 'auth/register', input);
+  const verifyOtp = useCallback(async ({ challengeId, code }) => {
+    const data = await apiRequest('POST', 'auth/otp/verify', { challengeId, code });
     localStorage.setItem('uconfess_jwt', data.token);
     localStorage.setItem('uconfess_user', JSON.stringify(data.user));
     setUser(data.user);
@@ -80,10 +90,12 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(() => ({
     user, login, register, logout, refresh,
+    verifyOtp,
     isAdmin, isPremium, canPostAnonymously,
     getAllUsers, updateUserRole, toggleUserBan,
     deleteConfessionById, setUserPremium,
   }), [user, login, register, logout, refresh,
+      verifyOtp,
       isAdmin, isPremium, canPostAnonymously,
       getAllUsers, updateUserRole, toggleUserBan,
       deleteConfessionById, setUserPremium]);
