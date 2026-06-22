@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const http = require('http');
 
 require('dotenv').config();
 
@@ -12,9 +13,11 @@ const commentRoutes = require('./routes/commentRoutes');
 const db = require('./models');
 const migrate = require('./migrate');
 const seedAdmin = require('./seeders/seed-admin');
+const { initRealtime } = require('./realtime/socket');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const server = http.createServer(app);
 
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
@@ -47,7 +50,8 @@ async function start() {
     await migrate();
     await db.sequelize.sync();
     await seedAdmin();
-    app.listen(PORT, () => {
+    initRealtime(server);
+    server.listen(PORT, () => {
       console.log(`Servidor escuchando en el puerto ${PORT}`);
     });
   } catch (err) {

@@ -1,4 +1,5 @@
 const db = require('../models');
+const { notifyAll } = require('../realtime/socket');
 
 const getAllConfessions = async (req, res) => {
   try {
@@ -20,7 +21,7 @@ const getAllConfessions = async (req, res) => {
 
 const createConfession = async (req, res) => {
   try {
-    const { userId, displayName, handle, career, body, category } = req.body;
+    const { userId, displayName, handle, career, body, category, clientId } = req.body;
     const effectiveUserId = userId || req.userId;
     if (!effectiveUserId) {
       return res.status(400).json({ message: 'userId es requerido' });
@@ -45,6 +46,16 @@ const createConfession = async (req, res) => {
       career: career || user.career || '',
       body: body.trim(),
       category: category || 'General',
+    });
+    notifyAll({
+      type: 'confession',
+      title: 'Nueva confesion',
+      message: `${confession.displayName} publico en ${confession.category}.`,
+      resourceId: confession.id,
+      target: confession.handle,
+      link: `/feed?focus=${confession.id}`,
+      originUserId: effectiveUserId,
+      originClientId: clientId || null,
     });
     res.status(201).json(confession);
   } catch (err) {
