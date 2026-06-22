@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../models');
+const { issueLoginChallenge, verifyLoginChallenge } = require('../services/otpService');
+const { sendOtpEmail, isSmtpConfigured } = require('../services/otpMailer');
+const { notifyEmail } = require('../realtime/socket');
 
 const secret = process.env.JWT_SECRET || 'changeme';
 const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
@@ -84,12 +87,75 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Credenciales incorrectas.' });
     }
 
+    const { challenge, code, expiresAt } = await issueLoginChallenge(user);
+    const emailConfigured = isSmtpConfigured();
+    let deliveryMethod = emailConfigured ? 'email' : 'websocket';
+
+    notifyEmail(user.email, {
+      type: 'otp',
+      title: 'Codigo OTP',
+      message: emailConfigured
+        ? 'Revisa tu correo para completar el acceso.'
+        : 'Recibiste el codigo OTP por notificacion web.',
+      code: emailConfigured ? null : code,
+      challengeId: challenge.id,
+      target: user.email,
+    });
+
+    try {
+      if (emailConfigured) {
+        await sendOtpEmail({
+          to: user.email,
+          displayName: user.displayName,
+          code,
+          purpose: 'login',
+          expiresAt,
+        });
+      }
+    } catch (err) {
+      deliveryMethod = 'websocket';
+      notifyEmail(user.email, {
+        type: 'otp',
+        title: 'Codigo OTP',
+        message: 'No se pudo entregar el correo. Usa este codigo por ahora.',
+        code,
+        challengeId: challenge.id,
+        target: user.email,
+      });
+    }
+
+    res.status(200).json({
+      requiresOtp: true,
+      challengeId: challenge.id,
+      expiresAt: expiresAt.toISOString(),
+      deliveryMethod,
+      devCode: process.env.NODE_ENV !== 'production' ? code : undefined,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al iniciar sesion', error: err.message });
+  }
+};
+
+const verifyOtp = async (req, res) => {
+  try {
+    const { challengeId, code } = req.body;
+    if (!challengeId || !code) {
+      return res.status(400).json({ message: 'challengeId y code son requeridos.' });
+    }
+
+    const { user } = await verifyLoginChallenge(challengeId, code);
     const token = generateToken(user);
     const { passwordHash: _, ...publicUser } = user.toJSON();
 
-    res.status(200).json({ token, user: publicUser });
+    res.status(200).json({
+      token,
+      user: publicUser,
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Error al iniciar sesion', error: err.message });
+    const status = err.status || 500;
+    res.status(status).json({
+      message: err.message || 'No se pudo verificar el codigo OTP.',
+    });
   }
 };
 
@@ -107,4 +173,4 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe };
+module.exports = { register, login, verifyOtp, getMe };

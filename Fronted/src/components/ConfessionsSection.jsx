@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useRealtime } from '../context/RealtimeContext';
 import { createConfession, listConfessions } from '../service/confessionsApi';
 import {
   getInteractionsForPosts,
@@ -225,6 +226,8 @@ function CommentsSection({ postId, userId, isAdmin }) {
 function ConfessionsSection({ variant = 'default' }) {
   const isFeed = variant === 'feed';
   const { user, isAdmin, canPostAnonymously, deleteConfessionById } = useAuth();
+  const { tabId, announceConfession } = useRealtime();
+  const location = useLocation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -275,6 +278,21 @@ function ConfessionsSection({ variant = 'default' }) {
     }
   }, [user?.id, loading, items, syncInteractions]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const focusId = params.get('focus');
+    if (!focusId || loading || items.length === 0) return;
+    const target = document.getElementById(`confession-${focusId}`);
+    if (!target) return;
+    window.setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('ring-2', 'ring-utp-red', 'ring-offset-2', 'ring-offset-transparent');
+      window.setTimeout(() => {
+        target.classList.remove('ring-2', 'ring-utp-red', 'ring-offset-2', 'ring-offset-transparent');
+      }, 2200);
+    }, 0);
+  }, [location.search, loading, items]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!user) return;
@@ -289,6 +307,7 @@ function ConfessionsSection({ variant = 'default' }) {
           displayName: anon ? 'Anonimo UTP' : user.displayName,
           handle: anon ? 'anonimo_utp' : user.handle,
           career: anon ? '' : user.career,
+          clientId: tabId,
         }
       );
       setItems((prev) => {
@@ -296,6 +315,7 @@ function ConfessionsSection({ variant = 'default' }) {
         syncInteractions(next, user.id);
         return next;
       });
+      announceConfession(created);
       setBody('');
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'No se pudo publicar.');
@@ -407,7 +427,7 @@ function ConfessionsSection({ variant = 'default' }) {
                 const commentsOpen = openComments[c.id];
 
                 return (
-                  <li key={c.id} className="post-card">
+                  <li key={c.id} id={`confession-${c.id}`} className="post-card transition-all duration-300">
                     <article>
                       <div className="flex flex-wrap items-start gap-4">
                         <img src={AVATAR} alt="" className="size-10 shrink-0 rounded-xl border border-theme object-cover" />

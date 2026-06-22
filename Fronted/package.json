@@ -15,6 +15,7 @@
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.14.2",
     "react-scripts": "5.0.1",
+    "socket.io-client": "^4.8.3",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -42,6 +43,7 @@
     ]
   },
   "devDependencies": {
+    "@nicolo-ribaudo/eslint-scope-5-internals": "^5.1.1-v1",
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.12",
     "tailwindcss": "^4.3.0"
