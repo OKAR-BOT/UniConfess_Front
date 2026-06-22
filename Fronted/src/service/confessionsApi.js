@@ -18,6 +18,7 @@ export async function createConfession(input, author) {
     displayName: author.displayName,
     handle: author.handle,
     career: author.career,
+    clientId: author.clientId || '',
     body,
     category: input.category || 'General',
   };

@@ -3,6 +3,7 @@ const User = require('./User');
 const Confession = require('./Confession');
 const Comment = require('./Comment');
 const Interaction = require('./Interaction');
+const OtpChallenge = require('./OtpChallenge');
 
 const db = {
   sequelize,
@@ -10,6 +11,7 @@ const db = {
   Confession,
   Comment,
   Interaction,
+  OtpChallenge,
 };
 
 module.exports = db;
