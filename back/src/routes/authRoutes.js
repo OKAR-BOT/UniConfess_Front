@@ -1,11 +1,28 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const authController = require('../controllers/authController');
 const { verifyToken } = require('../middlewares/auth');
 
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { message: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const otpVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { message: 'Demasiados intentos de verificacion. Intenta de nuevo en 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 router.post('/register', authController.register);
-router.post('/login', authController.login);
-router.post('/otp/verify', authController.verifyOtp);
+router.post('/login', loginLimiter, authController.login);
+router.post('/otp/verify', otpVerifyLimiter, authController.verifyOtp);
 router.get('/me', verifyToken, authController.getMe);
 
 module.exports = router;
