@@ -20,7 +20,7 @@ export default function NotificationTray() {
       className="fixed z-[9999] flex flex-col gap-3 overflow-y-auto"
       style={trayStyle}
     >
-      {notifications.map((item) => (
+      {notifications.filter((item) => item.type !== 'otp').map((item) => (
         <article
           key={item.id}
           className="relative min-h-[7rem] w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-900/10 backdrop-blur-md transition hover:shadow-xl"
