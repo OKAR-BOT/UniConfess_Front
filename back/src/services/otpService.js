@@ -1,9 +1,11 @@
 const crypto = require('crypto');
+const { Op } = require('sequelize');
 const db = require('../models');
 
 const OTP_LENGTH = Math.min(Math.max(Number.parseInt(process.env.OTP_LENGTH || '6', 10) || 6, 4), 8);
 const OTP_TTL_MINUTES = Math.max(Number.parseInt(process.env.OTP_EXPIRES_MINUTES || '10', 10) || 10, 1);
 const OTP_MAX_ATTEMPTS = Math.max(Number.parseInt(process.env.OTP_MAX_ATTEMPTS || '5', 10) || 5, 1);
+const OTP_MAX_PER_HOUR = Math.max(Number.parseInt(process.env.OTP_MAX_PER_HOUR || '3', 10) || 3, 1);
 const OTP_SECRET = process.env.OTP_SECRET || process.env.JWT_SECRET || 'changeme';
 
 function httpError(status, message) {
@@ -33,6 +35,18 @@ function safeCompare(a, b) {
 }
 
 async function issueLoginChallenge(user) {
+  const recentCount = await db.OtpChallenge.count({
+    where: {
+      userId: user.id,
+      purpose: 'login',
+      createdAt: { [Op.gte]: new Date(Date.now() - 60 * 60 * 1000) },
+    },
+  });
+
+  if (recentCount >= OTP_MAX_PER_HOUR) {
+    throw httpError(429, 'Has solicitado demasiados codigos. Espera una hora antes de pedir otro.');
+  }
+
   await db.OtpChallenge.destroy({
     where: {
       userId: user.id,
