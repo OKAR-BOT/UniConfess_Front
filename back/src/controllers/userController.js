@@ -194,9 +194,11 @@ const updateProfile = async (req, res) => {
     if (req.userId !== user.id && req.userRole !== 'admin') {
       return res.status(403).json({ message: 'No autorizado.' });
     }
+    const premiumFields = ['bio', 'bannerColor'];
     const allowed = ['displayName', 'bio', 'bannerColor', 'career'];
     allowed.forEach((field) => {
       if (req.body[field] !== undefined) {
+        if (premiumFields.includes(field) && req.userRole === 'user') return;
         user[field] = req.body[field];
       }
     });

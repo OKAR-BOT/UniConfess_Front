@@ -113,6 +113,7 @@ const login = async (req, res) => {
         });
       }
     } catch (err) {
+      console.error('[OTP email error]', err.message);
       deliveryMethod = 'websocket';
       notifyEmail(user.email, {
         type: 'otp',
@@ -132,7 +133,8 @@ const login = async (req, res) => {
       devCode: process.env.NODE_ENV !== 'production' ? code : undefined,
     });
   } catch (err) {
-    res.status(500).json({ message: 'Error al iniciar sesion', error: err.message });
+    const status = err.status || 500;
+    res.status(status).json({ message: err.message || 'Error al iniciar sesion' });
   }
 };
 

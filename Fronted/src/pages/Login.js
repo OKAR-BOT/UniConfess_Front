@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import MeshBackground from '../components/MeshBackground';
 import { useRealtime } from '../context/RealtimeContext';
 
+
 const OTP_KEY = 'uconfess_login_otp_pending_v1';
 
 function readPendingOtp() {
@@ -44,6 +45,10 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [devCode, setDevCode] = useState('');
+  const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [showSentToast, setShowSentToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const otpNotification = notifications.find(
     (item) => item.type === 'otp' && item.challengeId === pendingOtp?.challengeId && item.code
   );
@@ -70,6 +75,20 @@ function Login() {
       setOtp(String(otpNotification.code));
     }
   }, [notifications, pendingOtp, otpNotification]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  useEffect(() => {
+    if (!showSentToast) return;
+    const timer = setTimeout(() => setShowSentToast(false), 3000);
+    return () => clearTimeout(timer);
+  }, [showSentToast]);
 
   const requestOtp = async (e) => {
     if (e?.preventDefault) {
@@ -102,10 +121,15 @@ function Login() {
           challengeId: result.challengeId,
           expiresAt: result.expiresAt || null,
           email: email.trim(),
+          deliveryMethod: result.deliveryMethod || 'websocket',
         });
         setOtp('');
         setStep('otp');
         setDevCode(process.env.NODE_ENV !== 'production' && result.devCode ? String(result.devCode) : '');
+        if (result.deliveryMethod === 'email') {
+          setToastMessage(`Codigo enviado a ${email.trim()}`);
+          setShowSentToast(true);
+        }
         return;
       }
 
@@ -114,6 +138,42 @@ function Login() {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar sesion.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email.trim() || !password || resending || cooldown > 0) {
+      return;
+    }
+
+    setError(null);
+    setResending(true);
+    try {
+      await joinEmailRoom(email);
+      const result = await login(email, password);
+
+      if (result?.requiresOtp && result.challengeId) {
+        setPendingOtp({
+          challengeId: result.challengeId,
+          expiresAt: result.expiresAt || null,
+          email: email.trim(),
+          deliveryMethod: result.deliveryMethod || 'websocket',
+        });
+        setOtp('');
+        setDevCode(process.env.NODE_ENV !== 'production' && result.devCode ? String(result.devCode) : '');
+        setCooldown(30);
+        if (result.deliveryMethod === 'email') {
+          setToastMessage(`Codigo reenviado a ${email.trim()}`);
+          setShowSentToast(true);
+        }
+        return;
+      }
+
+      throw new Error('Respuesta inesperada del servidor.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo reenviar el codigo.');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -156,6 +216,9 @@ function Login() {
     setPassword('');
     setDevCode('');
     setError(null);
+    setResending(false);
+    setCooldown(0);
+    setShowSentToast(false);
   };
 
   return (
@@ -172,18 +235,22 @@ function Login() {
           </span>
         </div>
 
-        <h1 className="text-center text-2xl font-black text-theme">
-          {step === 'otp' ? 'Verificar codigo' : 'Entrar a UConfess'}
-        </h1>
-        <p className="mt-2 text-center text-sm text-theme-secondary">
-          {step === 'otp'
-            ? 'Ingresa el codigo que te llego por correo o notificacion web.'
-            : 'Tu acceso al feed requiere correo y codigo OTP.'}
-        </p>
+        {showSentToast ? (
+          <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-2.5 text-center text-sm font-medium text-green-600">
+            {toastMessage}
+          </div>
+        ) : null}
 
-        <div className="mt-8 space-y-4">
-          {step === 'credentials' ? (
-            <>
+        {step === 'credentials' ? (
+          <>
+            <h1 className="text-center text-2xl font-black text-theme">
+              Entrar a UConfess
+            </h1>
+            <p className="mt-2 text-center text-sm text-theme-secondary">
+              Tu acceso al feed requiere correo y codigo OTP.
+            </p>
+
+            <div className="mt-8 space-y-4">
               <input
                 type="email"
                 required
@@ -202,9 +269,36 @@ function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="input-utp p-3"
               />
-            </>
-          ) : (
-            <>
+            </div>
+
+            {error ? <p className="alert-error mt-4">{error}</p> : null}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-utp-primary mt-6 w-full py-3.5"
+            >
+              {loading ? 'Enviando codigo...' : 'Continuar'}
+            </button>
+
+            <p className="mt-6 text-center text-sm text-theme-muted">
+              No tienes cuenta?{' '}
+              <Link to="/register" className="font-bold text-utp-red hover:underline">
+                Registrate
+              </Link>
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-center text-2xl font-black text-theme">
+              Verificar codigo
+            </h1>
+            <p className="mt-2 text-center text-sm text-theme-secondary">
+              Te enviamos un codigo de verificacion a<br />
+              <span className="font-semibold">{email}</span>
+            </p>
+
+            <div className="mt-8 space-y-4">
               <input
                 type="text"
                 inputMode="numeric"
@@ -215,7 +309,8 @@ function Login() {
                 autoComplete="one-time-code"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\s/g, ''))}
-                className="input-utp p-3 text-center tracking-[0.35em]"
+                className="input-utp p-3 w-full text-center text-2xl tracking-[0.35em]"
+                autoFocus
               />
               {pendingOtp?.expiresAt ? (
                 <p className="text-center text-xs text-theme-muted">
@@ -225,58 +320,47 @@ function Login() {
                   })}
                 </p>
               ) : null}
-            </>
-          )}
-        </div>
+            </div>
 
-        {error ? <p className="alert-error mt-4">{error}</p> : null}
+            {error ? <p className="alert-error mt-4">{error}</p> : null}
 
-        {devCode && step === 'otp' && !otpNotification?.code ? (
-          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
-            Codigo disponible: <span className="font-mono font-semibold">{devCode}</span>
-          </div>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={loading || verifying}
-          className="btn-utp-primary mt-6 w-full py-3.5"
-        >
-          {step === 'otp'
-            ? verifying
-              ? 'Verificando...'
-              : 'Verificar codigo'
-            : loading
-              ? 'Enviando codigo...'
-              : 'Continuar'}
-        </button>
-
-        {step === 'otp' ? (
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={requestOtp}
-              disabled={loading || verifying || !password}
-              className="text-sm font-semibold text-utp-red hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Reenviar codigo
-            </button>
+            {devCode && !otpNotification?.code ? (
+              <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+                Codigo disponible: <span className="font-mono font-semibold">{devCode}</span>
+              </div>
+            ) : null}
 
             <button
-              type="button"
-              onClick={cancelOtp}
-              className="text-sm font-semibold text-theme-muted hover:text-utp-red"
+              type="submit"
+              disabled={verifying}
+              className="btn-utp-primary mt-6 w-full py-3.5"
             >
-              Volver
+              {verifying ? 'Verificando...' : 'Verificar codigo'}
             </button>
-          </div>
-        ) : (
-          <p className="mt-6 text-center text-sm text-theme-muted">
-            No tienes cuenta?{' '}
-            <Link to="/register" className="font-bold text-utp-red hover:underline">
-              Registrate
-            </Link>
-          </p>
+
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resending || cooldown > 0}
+                className="text-sm font-semibold text-utp-red hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {resending
+                  ? 'Reenviando...'
+                  : cooldown > 0
+                    ? `Reenviar (${cooldown}s)`
+                    : 'Reenviar codigo'}
+              </button>
+
+              <button
+                type="button"
+                onClick={cancelOtp}
+                className="text-sm font-semibold text-theme-muted hover:text-utp-red"
+              >
+                Volver
+              </button>
+            </div>
+          </>
         )}
       </form>
     </div>

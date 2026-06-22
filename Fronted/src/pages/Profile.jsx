@@ -41,11 +41,12 @@ export default function Profile() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const updated = await apiRequest('PUT', `/users/profile/${handle}`, {
-        bio: editBio,
-        bannerColor: editBanner,
-        career: editCareer,
-      }, true);
+      const body = { career: editCareer };
+      if (isPremiumOrAdmin) {
+        body.bio = editBio;
+        body.bannerColor = editBanner;
+      }
+      const updated = await apiRequest('PUT', `/users/profile/${handle}`, body, true);
       setProfile(updated);
       setEditing(false);
     } catch (err) {
@@ -125,19 +126,27 @@ export default function Profile() {
               <p className="text-sm text-theme-muted">@{profile.handle}</p>
               {editing ? (
                 <div className="space-y-2 mt-2">
-                  <textarea
-                    value={editBio}
-                    onChange={(e) => setEditBio(e.target.value)}
-                    placeholder="Biografía..."
-                    className="input-utp w-full text-sm"
-                    rows={2}
-                  />
-                  <input
-                    value={editBanner}
-                    onChange={(e) => setEditBanner(e.target.value)}
-                    placeholder="Color de banner (ej: #1e293b)"
-                    className="input-utp w-full text-sm"
-                  />
+                  {isPremiumOrAdmin ? (
+                    <>
+                      <textarea
+                        value={editBio}
+                        onChange={(e) => setEditBio(e.target.value)}
+                        placeholder="Biografía..."
+                        className="input-utp w-full text-sm"
+                        rows={2}
+                      />
+                      <input
+                        value={editBanner}
+                        onChange={(e) => setEditBanner(e.target.value)}
+                        placeholder="Color de banner (ej: #1e293b)"
+                        className="input-utp w-full text-sm"
+                      />
+                    </>
+                  ) : (
+                    <p className="text-xs text-amber-500 mb-1">
+                      Actualiza a premium para personalizar tu biografía y banner.
+                    </p>
+                  )}
                   <input
                     value={editCareer}
                     onChange={(e) => setEditCareer(e.target.value)}
