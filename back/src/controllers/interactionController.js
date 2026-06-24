@@ -1,5 +1,6 @@
 const db = require('../models');
 const { Op } = require('sequelize');
+const { notifyUser } = require('../realtime/socket');
 
 const toggleLike = async (req, res) => {
   try {
@@ -15,7 +16,20 @@ const toggleLike = async (req, res) => {
       await existing.destroy();
       return res.status(200).json({ liked: false });
     }
+
     await db.Interaction.create({ confessionId: id, userId: req.userId, type: 'like' });
+    const liker = await db.User.findByPk(req.userId);
+    if (confession.userId !== req.userId) {
+      notifyUser(confession.userId, {
+        type: 'like',
+        title: 'Nuevo me gusta',
+        message: `${liker?.displayName || liker?.handle || 'Alguien'} dio me gusta a tu publicación.`,
+        resourceId: confession.id,
+        target: confession.userId,
+        link: `/feed?focus=${confession.id}`,
+        originUserId: req.userId,
+      });
+    }
     res.status(201).json({ liked: true });
   } catch (err) {
     res.status(500).json({ message: 'Error al procesar like', error: err.message });
