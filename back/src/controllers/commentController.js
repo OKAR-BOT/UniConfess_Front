@@ -1,4 +1,5 @@
 const db = require('../models');
+const { notifyUser } = require('../realtime/socket');
 
 const getComments = async (req, res) => {
   try {
@@ -76,6 +77,19 @@ const createComment = async (req, res) => {
       handle: user.handle,
       body: body.trim(),
     });
+
+    if (confession.userId !== user.id) {
+      notifyUser(confession.userId, {
+        type: 'comment',
+        title: 'Nuevo comentario',
+        message: `${user.displayName || user.handle || 'Alguien'} comentó tu publicación.`,
+        resourceId: confession.id,
+        target: confession.userId,
+        link: `/feed?focus=${confession.id}`,
+        originUserId: user.id,
+      });
+    }
+
     res.status(201).json(comment);
   } catch (err) {
     res.status(500).json({ message: 'Error al crear comentario', error: err.message });
