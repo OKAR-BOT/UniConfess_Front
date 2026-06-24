@@ -1,19 +1,7 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@custom-variant dark (&:where(.dark, .dark *));
-
-@theme {
-  --color-utp-red: #B50D30;
-  --color-utp-red-dark: #941025;
-  --color-utp-red-light: #D41640;
-  --color-utp-green: #00B491;
-  --color-utp-green-dark: #009A7E;
-  --color-utp-black: #000000;
-  --color-utp-gray: #D0D0D0;
-  --color-utp-gray-light: #F5F5F5;
-  --color-utp-gray-dark: #666666;
-  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
-}
 
 :root {
   --color-bg: #eef1f8;

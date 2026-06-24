@@ -710,9 +710,6 @@
   .rounded-\[2rem\] {
     border-radius: 2rem;
   }
-  .rounded-full {
-    border-radius: calc(infinity * 1px);
-  }
   .rounded-lg {
     border-radius: var(--radius-lg);
   }
@@ -2121,7 +2118,6 @@
     display: inline-flex;
     align-items: center;
     gap: calc(var(--spacing) * 2);
-    border-radius: calc(infinity * 1px);
     padding-inline: calc(var(--spacing) * 3);
     padding-block: calc(var(--spacing) * 1);
     font-size: var(--text-xs);
@@ -2145,7 +2141,6 @@
     content: '';
     width: calc(var(--spacing) * 2);
     height: calc(var(--spacing) * 2);
-    border-radius: calc(infinity * 1px);
     background: var(--color-utp-red);
     animation: pulse-dot 1.8s ease-in-out infinite;
   }
@@ -2265,7 +2260,7 @@
   }
   .category-pill {
     flex-shrink: 0;
-    border-radius: calc(infinity * 1px);
+
     padding-inline: calc(var(--spacing) * 3);
     padding-block: calc(var(--spacing) * 1);
     font-size: var(--text-xs);
@@ -2333,7 +2328,6 @@
   }
   .mesh-orb {
     position: absolute;
-    border-radius: calc(infinity * 1px);
     --tw-blur: blur(var(--blur-3xl));
     filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
     animation: float 8s ease-in-out infinite;

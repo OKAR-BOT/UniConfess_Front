@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@tailwindcss/cli": "^4.3.0",
-    "@tailwindcss/postcss": "^4.2.4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -16,11 +14,12 @@
     "react-router-dom": "^7.14.2",
     "react-scripts": "5.0.1",
     "socket.io-client": "^4.8.3",
+    "tailwindcss": "^3.4.19",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "npx concurrently \"npx @tailwindcss/cli -i ./src/input.css -o ./src/index.css --watch\" \"react-scripts start\"",
-    "build": "npx @tailwindcss/cli -i ./src/input.css -o ./src/index.css && react-scripts build",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -44,8 +43,7 @@
   },
   "devDependencies": {
     "@nicolo-ribaudo/eslint-scope-5-internals": "^5.1.1-v1",
-    "autoprefixer": "^10.5.0",
-    "postcss": "^8.5.12",
-    "tailwindcss": "^4.3.0"
+    "autoprefixer": "^10.5.1",
+    "postcss": "^8.5.15"
   }
 }
