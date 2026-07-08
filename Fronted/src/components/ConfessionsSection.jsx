@@ -12,6 +12,7 @@ import {
   deleteComment as apiDeleteComment,
 } from '../service/interactionsApi';
 import { formatRelativeTime } from '../utils/formatTime';
+import ConfirmModal from './ConfirmModal';
 
 const CATEGORIES = [
   { value: 'General', label: 'General' },
@@ -225,7 +226,7 @@ function CommentsSection({ postId, userId, isAdmin }) {
 
 function ConfessionsSection({ variant = 'default' }) {
   const isFeed = variant === 'feed';
-  const { user, isAdmin, canPostAnonymously, deleteConfessionById } = useAuth();
+  const { user, isAdmin, canPostAnonymously, deleteConfessionById, updateConfessionById, createReport } = useAuth();
   const { tabId, announceConfession } = useRealtime();
   const location = useLocation();
   const [items, setItems] = useState([]);
@@ -243,6 +244,11 @@ function ConfessionsSection({ variant = 'default' }) {
 
   const [interactionMap, setInteractionMap] = useState({});
   const [openComments, setOpenComments] = useState({});
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmReport, setConfirmReport] = useState(null);
+  const [editingConfession, setEditingConfession] = useState(null);
+  const [editBody, setEditBody] = useState('');
+  const [editCategory, setEditCategory] = useState('General');
 
   const syncInteractions = useCallback(async (list, uid) => {
     if (!list || list.length === 0) {
@@ -360,6 +366,41 @@ function ConfessionsSection({ variant = 'default' }) {
     if (!user) return;
     await apiToggleRepost(postId);
     syncInteractions(items, user.id);
+  }
+
+  async function handleDeletePost(id) {
+    try {
+      await deleteConfessionById(id);
+      setConfirmDelete(null);
+      refresh();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function handleEditPost(e) {
+    e.preventDefault();
+    if (!editingConfession) return;
+    if (!editBody || editBody.trim().length < 10) {
+      alert('La publicacion debe tener al menos 10 caracteres.');
+      return;
+    }
+    try {
+      await updateConfessionById(editingConfession.id, { body: editBody, category: editCategory });
+      setEditingConfession(null);
+      refresh();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function handleReportPost(id, content) {
+    try {
+      await createReport({ confessionId: id, reason: content || 'Reporte de confesion' });
+      setConfirmReport(null);
+    } catch (err) {
+      alert(err.message);
+    }
   }
 
   return (
@@ -586,13 +627,34 @@ function ConfessionsSection({ variant = 'default' }) {
                               <IconHeart filled={ix.liked} />
                               <span className="tabular-nums">{ix.likeCount}</span>
                             </button>
-                            {isAdmin ? (
+                            {user && (user.id === c.userId || isAdmin) ? (
                               <button
                                 type="button"
-                                onClick={async () => { await deleteConfessionById(c.id); refresh(); }}
+                                onClick={() => setConfirmDelete(c.id)}
                                 className="ml-auto flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-utp-red transition hover:bg-utp-red/10"
                               >
-                                🗑️ Eliminar
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                Eliminar
+                              </button>
+                            ) : null}
+                            {user && user.id === c.userId && (isAdmin || user.role === 'premium') ? (
+                              <button
+                                type="button"
+                                onClick={() => { setEditingConfession(c); setEditBody(c.body); setEditCategory(c.category || 'General'); }}
+                                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-theme-muted transition hover:text-utp-red"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                Editar
+                              </button>
+                            ) : null}
+                            {user && user.id !== c.userId ? (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmReport({ id: c.id, body: c.body })}
+                                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-theme-muted transition hover:text-amber-500"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>
+                                Reportar
                               </button>
                             ) : null}
                           </div>
@@ -620,6 +682,53 @@ function ConfessionsSection({ variant = 'default' }) {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Eliminar publicacion"
+        message="Esta accion no se puede deshacer. La publicacion se eliminara permanentemente."
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={() => handleDeletePost(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
+
+      <ConfirmModal
+        open={!!confirmReport}
+        title="Reportar publicacion"
+        message="Al reportar, un administrador revisara el contenido. Abuso del reporte puede resultar en sanciones."
+        confirmLabel="Reportar"
+        cancelLabel="Cancelar"
+        variant="warning"
+        onConfirm={() => handleReportPost(confirmReport?.id, confirmReport?.body)}
+        onCancel={() => setConfirmReport(null)}
+      />
+
+      {editingConfession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="card-utp w-full max-w-lg p-7 relative border border-theme rounded-3xl shadow-2xl animate-modal-in" style={{ background: 'var(--color-card-solid)', backdropFilter: 'none' }}>
+            <h3 className="text-base font-black text-theme text-center pb-2 border-b border-theme mb-4">Editar publicacion</h3>
+            <form onSubmit={handleEditPost} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold text-theme-muted uppercase tracking-wider">Categoria</label>
+                <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className="input-utp mt-1 text-xs w-full py-1.5 px-3.5">
+                  {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Contenido</label>
+                <textarea required rows={7} maxLength={4000} value={editBody} onChange={(e) => setEditBody(e.target.value)} className="input-utp resize-none px-3 py-3 text-sm w-full" />
+                <p className="mt-1 text-right text-[10px] text-theme-muted">{editBody.length} / 4000</p>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setEditingConfession(null)} className="btn-utp-secondary px-5 py-2 text-sm">Cancelar</button>
+                <button type="submit" className="btn-utp-primary px-6 py-2 text-sm font-bold">Guardar cambios</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
