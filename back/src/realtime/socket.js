@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { Server } = require('socket.io');
+const { corsOrigin } = require('../config/cors');
 
 let io = null;
 
@@ -65,7 +66,7 @@ function initRealtime(server) {
 
   io = new Server(server, {
     cors: {
-      origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+      origin: corsOrigin,
       methods: ['GET', 'POST'],
       credentials: true,
     },
