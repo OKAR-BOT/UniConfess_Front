@@ -4,6 +4,8 @@ const Confession = require('./Confession');
 const Comment = require('./Comment');
 const Interaction = require('./Interaction');
 const OtpChallenge = require('./OtpChallenge');
+const Block = require('./Block');
+const Report = require('./Report');
 
 const db = {
   sequelize,
@@ -12,6 +14,8 @@ const db = {
   Comment,
   Interaction,
   OtpChallenge,
+  Block,
+  Report,
 };
 
 module.exports = db;
