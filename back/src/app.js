@@ -14,14 +14,15 @@ const db = require('./models');
 const migrate = require('./migrate');
 const seedAdmin = require('./seeders/seed-admin');
 const { initRealtime } = require('./realtime/socket');
+const { corsOrigin } = require('./config/cors');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 const server = http.createServer(app);
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: corsOrigin,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
 
