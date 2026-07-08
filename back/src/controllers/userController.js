@@ -219,9 +219,34 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const uploadAvatar = async (req, res) => {
+  try {
+    const { handle } = req.params;
+    const user = await db.User.findOne({ where: { handle: handle.toLowerCase() } });
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    if (req.userId !== user.id) {
+      return res.status(403).json({ message: 'No autorizado.' });
+    }
+    if (req.userRole !== 'premium' && req.userRole !== 'admin') {
+      return res.status(403).json({ message: 'Solo usuarios premium pueden subir avatar.' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ message: 'Debes seleccionar una imagen.' });
+    }
+    user.avatarUrl = `/uploads/${req.file.filename}`;
+    await user.save();
+    const { passwordHash: _, ...publicUser } = user.toJSON();
+    res.status(200).json(publicUser);
+  } catch (err) {
+    res.status(500).json({ message: 'Error al subir avatar', error: err.message });
+  }
+};
+
 module.exports = {
   getAllUsers, createUser, loginUser,
   postConfession, getAllConfessions,
   updateUserRole, toggleUserBan, setUserPremium,
-  getProfileByHandle, getUserConfessions, updateProfile,
+  getProfileByHandle, getUserConfessions, updateProfile, uploadAvatar,
 };

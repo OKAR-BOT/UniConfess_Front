@@ -19,6 +19,7 @@ async function migrate() {
   console.log('Ejecutando migraciones...');
   await ensureColumn('users', 'bio', 'TEXT');
   await ensureColumn('users', 'banner_color', 'VARCHAR(255)');
+  await ensureColumn('users', 'avatar_url', 'VARCHAR(500)');
   await ensureColumn('confessions', 'is_pinned', 'TINYINT(1) DEFAULT 0');
   console.log('Migraciones completadas.');
 }
