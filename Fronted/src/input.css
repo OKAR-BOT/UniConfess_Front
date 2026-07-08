@@ -370,12 +370,10 @@
 
   .quote-strip {
     @apply relative overflow-hidden rounded-3xl px-8 py-10 text-center;
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--color-utp-red) 90%, black) 0%,
-      var(--color-utp-red-dark) 50%,
-      color-mix(in srgb, var(--color-utp-black) 80%, var(--color-utp-red)) 100%
-    );
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--color-utp-red) 90%, black) 0%,
+        var(--color-utp-red-dark) 50%,
+        color-mix(in srgb, var(--color-utp-black) 80%, var(--color-utp-red)) 100%);
     color: white;
     box-shadow: 0 20px 50px var(--color-glow-red);
   }
@@ -434,21 +432,25 @@
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0) rotate(0deg);
   }
+
   50% {
     transform: translateY(-18px) rotate(3deg);
   }
 }
 
 @keyframes pulse-dot {
+
   0%,
   100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.5;
     transform: scale(0.85);
@@ -456,9 +458,19 @@
 }
 
 @keyframes bounce-in {
-  0% { transform: translateY(20px); opacity: 0; }
-  50% { transform: translateY(-4px); }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .animate-bounce-in {
@@ -466,6 +478,13 @@
 }
 
 @keyframes sidebar-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }

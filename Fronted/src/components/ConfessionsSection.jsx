@@ -237,6 +237,9 @@ function ConfessionsSection({ variant = 'default' }) {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
   const [postAnon, setPostAnon] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const [interactionMap, setInteractionMap] = useState({});
   const [openComments, setOpenComments] = useState({});
@@ -317,11 +320,34 @@ function ConfessionsSection({ variant = 'default' }) {
       });
       announceConfession(created);
       setBody('');
+      setCategory('General');
+      setPostAnon(false);
+      setIsFormOpen(false);
+      setIsSuccessOpen(true);
+      setTimeout(() => {
+        setIsSuccessOpen(false);
+      }, 3500);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'No se pudo publicar.');
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleCancelClick() {
+    if (body.trim()) {
+      setShowCancelConfirm(true);
+    } else {
+      setIsFormOpen(false);
+    }
+  }
+
+  function confirmCancel() {
+    setBody('');
+    setCategory('General');
+    setPostAnon(false);
+    setShowCancelConfirm(false);
+    setIsFormOpen(false);
   }
 
   async function onToggleLike(postId) {
@@ -358,39 +384,125 @@ function ConfessionsSection({ variant = 'default' }) {
 
         <div className={`mx-auto ${isFeed ? 'mt-4 max-w-full' : 'mt-10 max-w-4xl'}`}>
           {user ? (
-            <form onSubmit={handleSubmit} className="card-utp p-6 sm:p-8">
-              <div className="flex gap-4">
-                <img src={AVATAR} alt="" className="size-12 shrink-0 rounded-2xl border border-theme object-cover shadow-sm" />
-                <div className="min-w-0 flex-1 space-y-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-bold text-theme">{user.displayName}</span>
-                    <span className="text-xs text-theme-muted">@{user.handle}</span>
-                    <span className="text-xs text-theme-muted">· {user.career}</span>
-                  </div>
-                  <div>
-                    <label htmlFor="cf-category" className="block text-sm font-bold text-theme-secondary">Tipo de publicacion</label>
-                    <select id="cf-category" value={category} onChange={(e) => setCategory(e.target.value)} className="input-utp mt-1.5 text-sm">
-                      {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                    </select>
-                  </div>
-                  {canPostAnonymously ? (
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input type="checkbox" checked={postAnon} onChange={(e) => setPostAnon(e.target.checked)} className="size-4 accent-utp-red rounded" />
-                      <span className="text-sm font-medium text-theme-secondary">🎭 Publicar anonimamente</span>
-                    </label>
-                  ) : null}
-                  <div>
-                    <label htmlFor="cf-body" className="block text-sm font-bold text-theme-secondary">Tu confesion</label>
-                    <textarea id="cf-body" required rows={5} maxLength={4000} value={body} onChange={(e) => setBody(e.target.value)} className="input-utp mt-1.5 resize-y px-4 py-3 text-sm" placeholder="Escribe aqui..." />
-                    <p className="mt-1 text-right text-xs text-theme-muted">{body.length} / 4000</p>
-                  </div>
-                  {formError ? <p className="alert-error">{formError}</p> : null}
-                  <button type="submit" disabled={submitting} className="btn-utp-primary w-full py-3 sm:w-auto sm:px-8">
-                    {submitting ? 'Publicando...' : '✨ Publicar confesion'}
-                  </button>
+            <>
+              {/* Facebook-style Trigger Bar */}
+              <div 
+                className="card-utp p-4 flex items-center gap-3 cursor-pointer hover:bg-theme/5 transition duration-200" 
+                onClick={() => setIsFormOpen(true)}
+              >
+                <img src={AVATAR} alt="" className="size-10 shrink-0 rounded-full border border-theme object-cover shadow-sm" />
+                <div className="flex-1 bg-theme/5 border border-theme rounded-full px-4 py-2 text-sm text-theme-muted hover:bg-theme/10 transition duration-150 text-left">
+                  ¿Qué quieres confesar hoy, {user.displayName}?
                 </div>
               </div>
-            </form>
+
+              {/* Form Modal */}
+              {isFormOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                  <div className="card-utp w-full max-w-2xl p-7 relative border border-theme rounded-3xl shadow-2xl animate-modal-in min-h-[520px] max-h-[90vh] flex flex-col overflow-y-auto" style={{ background: 'var(--color-card-solid)', backdropFilter: 'none' }}>
+                    <h3 className="text-base font-black text-theme text-center pb-2 border-b border-theme mb-3">Crear publicación</h3>
+                    
+                    <form onSubmit={handleSubmit} className="space-y-4 flex flex-col flex-1">
+                      <div className="flex items-center gap-3">
+                        <img src={AVATAR} alt="" className="size-9 shrink-0 rounded-full border border-theme object-cover shadow-sm" />
+                        <div className="text-left min-w-0 flex-1">
+                          <div className="text-sm font-bold text-theme truncate">{user.displayName}</div>
+                          <div className="text-xs text-theme-muted truncate">@{user.handle} · {user.career}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                        <div className="text-left">
+                          <label htmlFor="cf-category" className="block text-[10px] font-bold text-theme-muted uppercase tracking-wider">Categoría</label>
+                          <select id="cf-category" value={category} onChange={(e) => setCategory(e.target.value)} className="input-utp mt-1 text-xs w-full py-1.5 px-3.5">
+                            {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                          </select>
+                        </div>
+                        
+                        {canPostAnonymously ? (
+                          <label className="flex items-center gap-2 cursor-pointer select-none pb-2 w-fit">
+                            <input type="checkbox" checked={postAnon} onChange={(e) => setPostAnon(e.target.checked)} className="size-3.5 accent-utp-red rounded" />
+                            <span className="text-xs font-semibold text-theme-secondary">🎭 Anónimo</span>
+                          </label>
+                        ) : null}
+                      </div>
+                      
+                      <div className="text-left">
+                        <label htmlFor="cf-body" className="block text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Tu confesión</label>
+                        <textarea id="cf-body" required rows={7} maxLength={4000} value={body} onChange={(e) => setBody(e.target.value)} className="input-utp resize-none px-3 py-3 text-sm w-full" placeholder={`¿Qué estás pensando, ${user.displayName}?`} />
+                        <p className="mt-1 text-right text-[10px] text-theme-muted">{body.length} / 4000</p>
+                      </div>
+                      
+                      {formError ? <p className="alert-error text-xs py-1.5 px-3">{formError}</p> : null}
+                      
+                      <div className="flex justify-end gap-3 pt-2 mt-auto">
+                        <button type="button" onClick={handleCancelClick} className="btn-utp-secondary px-5 py-2 text-sm">
+                          Cancelar
+                        </button>
+                        <button type="submit" disabled={submitting} className="btn-utp-primary px-6 py-2 text-sm font-bold">
+                          {submitting ? 'Publicando...' : '✨ Publicar'}
+                        </button>
+                      </div>
+                    </form>
+
+                    {/* Confirm Cancel — overlaid INSIDE the modal card */}
+                    {showCancelConfirm && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-black/85 backdrop-blur-[2px] animate-fade-in">
+                        <div className="w-full max-w-xs mx-6 p-6 text-center border border-theme rounded-2xl shadow-2xl animate-modal-in flex flex-col items-center" style={{ background: 'var(--color-card-solid)', backdropFilter: 'none' }}>
+                          <div className="size-14 bg-amber-100 dark:bg-amber-950/50 text-amber-500 rounded-full flex items-center justify-center mb-4 border border-amber-200 dark:border-amber-800 shadow-inner">
+                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                          </div>
+                          <h4 className="text-base font-black text-theme">¿Descartar publicación?</h4>
+                          <p className="text-xs text-theme-secondary mt-2">Si cancelas ahora, perderás lo que has escrito.</p>
+                          <div className="flex gap-3 mt-5 w-full">
+                            <button
+                              type="button"
+                              onClick={() => setShowCancelConfirm(false)}
+                              className="btn-utp-secondary flex-1 py-2 text-xs font-bold"
+                            >
+                              No, continuar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={confirmCancel}
+                              className="btn-utp-primary flex-1 py-2 text-xs font-bold"
+                            >
+                              Sí, cancelar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+
+
+              {/* Success Notification Modal */}
+              {isSuccessOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+                  <div className="card-utp w-full max-w-sm p-6 text-center bg-[var(--color-card-solid)] border border-theme rounded-2xl shadow-2xl animate-success-pop flex flex-col items-center">
+                    <div className="size-16 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-500 rounded-full flex items-center justify-center mb-4 border border-emerald-200 dark:border-emerald-800 shadow-inner animate-bounce-in">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <h4 className="text-xl font-black text-theme">¡Publicado con éxito!</h4>
+                    <p className="text-sm text-theme-secondary mt-2">Tu confesión ya está disponible en la comunidad de UConfess.</p>
+                    <button
+                      type="button"
+                      onClick={() => setIsSuccessOpen(false)}
+                      className="btn-utp-primary mt-5 px-6 py-2 w-full text-xs font-bold"
+                    >
+                      Entendido
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="card-utp p-8 text-center">
               <p className="text-4xl">👋</p>
@@ -430,7 +542,7 @@ function ConfessionsSection({ variant = 'default' }) {
                   <li key={c.id} id={`confession-${c.id}`} className="post-card transition-all duration-300">
                     <article>
                       <div className="flex flex-wrap items-start gap-4">
-                        <img src={AVATAR} alt="" className="size-10 shrink-0 rounded-xl border border-theme object-cover" />
+                        <img src={AVATAR} alt="" className="size-10 shrink-0 !rounded-full border border-theme object-cover" />
                         <div className="min-w-0 flex-1 overflow-hidden">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <Link to={`/profile/${c.handle}`} className="truncate text-sm font-bold text-theme hover:text-utp-red transition-colors">{c.displayName}</Link>
