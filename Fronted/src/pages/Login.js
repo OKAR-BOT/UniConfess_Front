@@ -201,7 +201,7 @@ function Login() {
       setOtp('');
       setPassword('');
       setDevCode('');
-      navigate(routeByRole(user), { replace: true });
+      navigate(routeByRole(user), { replace: true, state: { loginSuccess: true } });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo verificar el codigo.');
     } finally {
