@@ -88,7 +88,7 @@ const updateConfession = async (req, res) => {
     if (!confession) {
       return res.status(404).json({ message: 'Confesion no encontrada.' });
     }
-    if (req.userId !== confession.userId) {
+    if (req.userId !== confession.userId && req.userRole !== 'admin') {
       return res.status(403).json({ message: 'No tienes permiso para editar esta confesion.' });
     }
     if (req.userRole !== 'premium' && req.userRole !== 'admin') {

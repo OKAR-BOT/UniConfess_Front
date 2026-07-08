@@ -4,9 +4,11 @@ const rateLimit = require('express-rate-limit');
 const authController = require('../controllers/authController');
 const { verifyToken } = require('../middlewares/auth');
 
+const isTest = process.env.NODE_ENV === 'test';
+
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: isTest ? 100 : 5,
   message: { message: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -14,7 +16,7 @@ const loginLimiter = rateLimit({
 
 const otpVerifyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: isTest ? 100 : 5,
   message: { message: 'Demasiados intentos de verificacion. Intenta de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,

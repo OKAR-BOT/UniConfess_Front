@@ -30,4 +30,7 @@ const Block = sequelize.define('Block', {
 User.belongsToMany(User, { through: Block, as: 'blocked', foreignKey: 'blockerId', otherKey: 'blockedId' });
 User.belongsToMany(User, { through: Block, as: 'blockers', foreignKey: 'blockedId', otherKey: 'blockerId' });
 
+Block.belongsTo(User, { foreignKey: 'blockedId', as: 'blocked' });
+Block.belongsTo(User, { foreignKey: 'blockerId', as: 'blocker' });
+
 module.exports = Block;

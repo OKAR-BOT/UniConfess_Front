@@ -63,9 +63,11 @@ function notifyAll(payload) {
 function initRealtime(server) {
   if (io) return io;
 
+  const { getAllowedOrigins } = require('../config/cors');
+
   io = new Server(server, {
     cors: {
-      origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+      origin: getAllowedOrigins(),
       methods: ['GET', 'POST'],
       credentials: true,
     },
