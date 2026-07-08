@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../service/api';
 import { formatRelativeTime } from '../utils/formatTime';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function Profile() {
   const { handle } = useParams();
-  const { user, logout } = useAuth();
+  const { user, logout, blockUser, unblockUser, createReport, uploadAvatar } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [profile, setProfile] = useState(null);
   const [confessions, setConfessions] = useState([]);
   const [tab, setTab] = useState('confessions');
@@ -19,6 +21,10 @@ export default function Profile() {
   const [editBanner, setEditBanner] = useState('');
   const [editCareer, setEditCareer] = useState('');
   const [saving, setSaving] = useState(false);
+  const [confirmBlock, setConfirmBlock] = useState(null);
+  const [confirmReport, setConfirmReport] = useState(null);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -53,6 +59,57 @@ export default function Profile() {
       alert(err.message || 'Error al guardar');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen debe ser menor a 5MB.');
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const updated = await uploadAvatar(handle, file);
+      setProfile((prev) => ({ ...prev, avatarUrl: updated.avatarUrl }));
+      if (user && user.handle.toLowerCase() === handle.toLowerCase()) {
+        const storedUser = JSON.parse(localStorage.getItem('uconfess_user') || '{}');
+        storedUser.avatarUrl = updated.avatarUrl;
+        localStorage.setItem('uconfess_user', JSON.stringify(storedUser));
+      }
+    } catch (err) {
+      alert(err.message || 'Error al subir avatar');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleBlockUser = async () => {
+    try {
+      await blockUser(profile.id);
+      setIsBlocked(true);
+      setConfirmBlock(null);
+    } catch (err) {
+      alert(err.message || 'Error al bloquear');
+    }
+  };
+
+  const handleUnblockUser = async () => {
+    try {
+      await unblockUser(profile.id);
+      setIsBlocked(false);
+    } catch (err) {
+      alert(err.message || 'Error al desbloquear');
+    }
+  };
+
+  const handleReportUser = async () => {
+    try {
+      await createReport({ reportedUserId: profile.id, reason: confirmReport });
+      setConfirmReport(null);
+    } catch (err) {
+      alert(err.message || 'Error al reportar');
     }
   };
 
@@ -113,8 +170,37 @@ export default function Profile() {
         )}
         <div className="bg-theme-bg-secondary p-6">
           <div className="flex items-start gap-4">
-            <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-2xl font-bold shrink-0 ${profile.bannerColor ? '-mt-12 border-4 border-theme-bg-secondary' : ''}`}>
-              {profile.displayName.charAt(0).toUpperCase()}
+            <div className={`relative shrink-0 ${profile.bannerColor ? '-mt-12 border-4 border-theme-bg-secondary' : ''}`}>
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt="" className="w-16 h-16 rounded-full object-cover border border-theme" />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-2xl font-bold">
+                  {profile.displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              {isOwner && isPremiumOrAdmin && (
+                <div className="absolute -bottom-1 -right-1">
+                  {uploadingAvatar ? (
+                    <span className="flex size-6 items-center justify-center rounded-full bg-utp-red text-white text-[10px] font-bold animate-pulse">...</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex size-6 items-center justify-center rounded-full bg-utp-red text-white hover:bg-utp-red/80 transition shadow-md"
+                      title="Cambiar avatar"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.gif,.webp"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                </div>
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
@@ -184,7 +270,26 @@ export default function Profile() {
                   Editar perfil
                 </button>
                 <button onClick={() => { logout(); navigate('/'); }} className="text-xs text-theme-muted hover:text-utp-red transition-colors">
-                  Cerrar sesión
+                  Cerrar sesion
+                </button>
+              </div>
+            )}
+            {!isOwner && user && (
+              <div className="flex flex-col gap-1 shrink-0 mt-1">
+                {isBlocked ? (
+                  <button onClick={handleUnblockUser} className="text-xs text-green-500 hover:underline">
+                    Desbloquear
+                  </button>
+                ) : (
+                  <button onClick={() => setConfirmBlock(profile.id)} className="text-xs text-utp-red hover:underline">
+                    Bloquear
+                  </button>
+                )}
+                <button
+                  onClick={() => setConfirmReport(`Reportar usuario ${profile.displayName} (@${profile.handle})`)}
+                  className="text-xs text-amber-500 hover:underline"
+                >
+                  Reportar
                 </button>
               </div>
             )}
@@ -232,6 +337,28 @@ export default function Profile() {
           Reposts
         </button>
       </div>
+
+      <ConfirmModal
+        open={!!confirmBlock}
+        title="Bloquear usuario"
+        message={`¿Seguro que quieres bloquear a ${profile.displayName}? No podras ver sus publicaciones ni interactuar con el/ella.`}
+        confirmLabel="Bloquear"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={handleBlockUser}
+        onCancel={() => setConfirmBlock(null)}
+      />
+
+      <ConfirmModal
+        open={!!confirmReport}
+        title="Reportar usuario"
+        message={confirmReport || 'Al reportar, un administrador revisara el perfil.'}
+        confirmLabel="Reportar"
+        cancelLabel="Cancelar"
+        variant="warning"
+        onConfirm={handleReportUser}
+        onCancel={() => setConfirmReport(null)}
+      />
 
       {filtered.length === 0 ? (
         <p className="text-center text-theme-muted py-8">

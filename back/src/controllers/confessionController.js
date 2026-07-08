@@ -70,10 +70,46 @@ const deleteConfession = async (req, res) => {
     if (!confession) {
       return res.status(404).json({ message: 'Confesion no encontrada.' });
     }
+    if (req.userId !== confession.userId && req.userRole !== 'admin') {
+      return res.status(403).json({ message: 'No tienes permiso para eliminar esta confesion.' });
+    }
     await confession.destroy();
     res.status(200).json({ message: 'Confesion eliminada.' });
   } catch (err) {
     res.status(500).json({ message: 'Error al eliminar confesion', error: err.message });
+  }
+};
+
+const updateConfession = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { body, category } = req.body;
+    const confession = await db.Confession.findByPk(id);
+    if (!confession) {
+      return res.status(404).json({ message: 'Confesion no encontrada.' });
+    }
+    if (req.userId !== confession.userId) {
+      return res.status(403).json({ message: 'No tienes permiso para editar esta confesion.' });
+    }
+    if (req.userRole !== 'premium' && req.userRole !== 'admin') {
+      return res.status(403).json({ message: 'Solo usuarios premium pueden editar confesiones.' });
+    }
+    if (body !== undefined) {
+      if (!body || body.trim().length < 10) {
+        return res.status(400).json({ message: 'La publicacion debe tener al menos 10 caracteres.' });
+      }
+      if (body.length > 4000) {
+        return res.status(400).json({ message: 'Maximo 4000 caracteres.' });
+      }
+      confession.body = body.trim();
+    }
+    if (category !== undefined) {
+      confession.category = category;
+    }
+    await confession.save();
+    res.status(200).json(confession);
+  } catch (err) {
+    res.status(500).json({ message: 'Error al editar confesion', error: err.message });
   }
 };
 
@@ -98,4 +134,4 @@ const togglePin = async (req, res) => {
   }
 };
 
-module.exports = { getAllConfessions, createConfession, deleteConfession, togglePin };
+module.exports = { getAllConfessions, createConfession, deleteConfession, togglePin, updateConfession };
