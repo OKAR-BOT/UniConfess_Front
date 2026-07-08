@@ -12,6 +12,8 @@ function getToken() {
   }
 }
 
+apiRequest.getUrl = getApiUrl;
+
 export async function apiRequest(method, path, body = null, auth = false) {
   const url = getApiUrl(path);
   const headers = { 'Content-Type': 'application/json' };
