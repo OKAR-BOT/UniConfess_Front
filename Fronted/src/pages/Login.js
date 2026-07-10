@@ -6,6 +6,7 @@ import { useRealtime } from '../context/RealtimeContext';
 
 
 const OTP_KEY = 'uconfess_login_otp_pending_v1';
+const LOGIN_SUCCESS_KEY = 'uconfess_login_success_v1';
 
 function readPendingOtp() {
   try {
@@ -30,6 +31,14 @@ function writePendingOtp(value) {
 
 function routeByRole(user) {
   return user?.role === 'admin' ? '/admin' : '/feed';
+}
+
+function markLoginSuccess() {
+  try {
+    sessionStorage.setItem(LOGIN_SUCCESS_KEY, '1');
+  } catch {
+    // Ignored on purpose.
+  }
 }
 
 function Login() {
@@ -112,6 +121,7 @@ function Login() {
         setStep('credentials');
         setOtp('');
         setDevCode('');
+        markLoginSuccess();
         navigate(routeByRole(result.user), { replace: true });
         return;
       }

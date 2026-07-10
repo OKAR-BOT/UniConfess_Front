@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { Server } = require('socket.io');
+const { corsOrigin } = require('../config/cors');
 
 let io = null;
 

@@ -4,6 +4,16 @@ import { useAuth } from '../context/AuthContext';
 import CareerSearchSelect from '../components/CareerSearchSelect';
 import MeshBackground from '../components/MeshBackground';
 
+const REGISTER_SUCCESS_KEY = 'uconfess_register_success_v1';
+
+function markRegisterSuccess() {
+  try {
+    sessionStorage.setItem(REGISTER_SUCCESS_KEY, '1');
+  } catch {
+    // Ignored on purpose.
+  }
+}
+
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -25,6 +35,7 @@ export default function Register() {
     setLoading(true);
     try {
       await register({ displayName, handle, email, password, career });
+      markRegisterSuccess();
       navigate('/feed', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo registrar.');

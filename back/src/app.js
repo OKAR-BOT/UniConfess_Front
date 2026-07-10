@@ -16,6 +16,7 @@ const db = require('./models');
 const migrate = require('./migrate');
 const seedAdmin = require('./seeders/seed-admin');
 const { initRealtime } = require('./realtime/socket');
+const { corsOrigin } = require('./config/cors');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
