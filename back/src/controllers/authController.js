@@ -175,4 +175,74 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { register, login, verifyOtp, getMe };
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Correo requerido.' });
+    }
+    const user = await db.User.findOne({ where: { email: email.toLowerCase().trim() } });
+    if (!user) {
+      return res.status(200).json({ message: 'Si el correo existe, recibiras un codigo OTP.' });
+    }
+    const { challenge, code, expiresAt } = await issueLoginChallenge(user);
+    const emailConfigured = isSmtpConfigured();
+    let deliveryMethod = emailConfigured ? 'email' : 'websocket';
+    try {
+      if (emailConfigured) {
+        await sendOtpEmail({
+          to: user.email,
+          displayName: user.displayName,
+          code,
+          purpose: 'password_reset',
+          expiresAt,
+        });
+      }
+    } catch (err) {
+      console.error('[OTP reset error]', err.message);
+      deliveryMethod = 'websocket';
+    }
+    notifyEmail(user.email, {
+      type: 'otp',
+      title: 'Codigo de recuperacion',
+      message: emailConfigured ? 'Revisa tu correo para recuperar tu contrasena.' : 'Codigo OTP para recuperar contrasena.',
+      code: emailConfigured ? null : code,
+      challengeId: challenge.id,
+      target: user.email,
+    });
+    res.status(200).json({
+      requiresOtp: true,
+      challengeId: challenge.id,
+      expiresAt: expiresAt.toISOString(),
+      deliveryMethod,
+      devCode: process.env.NODE_ENV !== 'production' ? code : undefined,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al solicitar recuperacion', error: err.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { challengeId, code, newPassword } = req.body;
+    if (!challengeId || !code || !newPassword) {
+      return res.status(400).json({ message: 'challengeId, code y newPassword son requeridos.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'La contrasena debe tener al menos 6 caracteres.' });
+    }
+    const bcrypt = require('bcryptjs');
+    const { user } = await verifyLoginChallenge(challengeId, code);
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = passwordHash;
+    await user.save();
+    const token = generateToken(user);
+    const { passwordHash: _, ...publicUser } = user.toJSON();
+    res.status(200).json({ message: 'Contrasena actualizada exitosamente.', token, user: publicUser });
+  } catch (err) {
+    const status = err.status || 500;
+    res.status(status).json({ message: err.message || 'No se pudo restablecer la contrasena.' });
+  }
+};
+
+module.exports = { register, login, verifyOtp, getMe, forgotPassword, resetPassword };
