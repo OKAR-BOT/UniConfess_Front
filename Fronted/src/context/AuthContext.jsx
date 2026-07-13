@@ -43,12 +43,20 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (input) => {
-    const data = await apiRequest('POST', 'auth/register', input);
+  const data = await apiRequest('POST', 'auth/register', input);
+
+  if (data?.requiresOtp) {
+    return data; 
+  }
+
+  if (data?.token && data?.user) {
     localStorage.setItem('uconfess_jwt', data.token);
     localStorage.setItem('uconfess_user', JSON.stringify(data.user));
     setUser(data.user);
     return data.user;
-  }, []);
+  }
+  return data;
+}, []);
 
   const verifyOtp = useCallback(async ({ challengeId, code }) => {
     const data = await apiRequest('POST', 'auth/otp/verify', { challengeId, code });
