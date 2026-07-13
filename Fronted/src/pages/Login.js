@@ -25,7 +25,7 @@ function writePendingOtp(value) {
     }
     sessionStorage.setItem(OTP_KEY, JSON.stringify(value));
   } catch {
-    // Ignored on purpose.
+    
   }
 }
 
@@ -37,7 +37,7 @@ function markLoginSuccess() {
   try {
     sessionStorage.setItem(LOGIN_SUCCESS_KEY, '1');
   } catch {
-    // Ignored on purpose.
+  
   }
 }
 
