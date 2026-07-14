@@ -10,20 +10,21 @@ const userRoutes = require('./routes/userRoutes');
 const confessionRoutes = require('./routes/confessionRoutes');
 const interactionRoutes = require('./routes/interactionRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const blockRoutes = require('./routes/blockRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const db = require('./models');
 const migrate = require('./migrate');
 const seedAdmin = require('./seeders/seed-admin');
 const { initRealtime } = require('./realtime/socket');
 
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 const server = http.createServer(app);
 
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
-}));
+const { corsOrigin } = require('./config/cors');
+app.use(cors({ origin: corsOrigin, credentials: true }));
 
 app.use(express.json());
 
@@ -32,6 +33,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/confessions', confessionRoutes);
 app.use('/api/confessions', commentRoutes);
 app.use('/api/interactions', interactionRoutes);
+app.use('/api/blocks', blockRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 const buildPath = path.join(__dirname, '..', '..', 'Fronted', 'build');
 app.use(express.static(buildPath));

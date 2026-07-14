@@ -5,6 +5,7 @@ const SIDEBAR_LINKS = [
   { to: '/admin', label: 'Dashboard', icon: '📊', end: true },
   { to: '/admin/users', label: 'Usuarios', icon: '👥' },
   { to: '/admin/confessions', label: 'Confesiones', icon: '📝' },
+  { to: '/admin/reports', label: 'Reportes', icon: '⚑', end: false },
 ];
 
 function AdminSidebar() {

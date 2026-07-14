@@ -12,6 +12,8 @@ function getToken() {
   }
 }
 
+apiRequest.getUrl = getApiUrl;
+
 export async function apiRequest(method, path, body = null, auth = false) {
   const url = getApiUrl(path);
   const headers = { 'Content-Type': 'application/json' };
@@ -52,4 +54,11 @@ export function isTokenExpired() {
   const expiry = getTokenExpiry();
   if (!expiry) return true;
   return Date.now() >= expiry.getTime();
+}
+
+export function getImageUrl(path) {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const base = API_BASE.replace(/\/api\/?$/, '');
+  return `${base}${path}`;
 }

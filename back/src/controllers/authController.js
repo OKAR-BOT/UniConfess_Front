@@ -26,18 +26,20 @@ const register = async (req, res) => {
     if (displayName.length < 2 || displayName.length > 60) {
       return res.status(400).json({ message: 'El nombre debe tener entre 2 y 60 caracteres.' });
     }
-    if (!/^[a-z0-9_]{3,20}$/i.test(handle)) {
-      return res.status(400).json({ message: 'Usuario: 3-20 caracteres, solo letras, numeros y _.' });
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ message: 'Correo no valido.' });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'La contrasena debe tener al menos 6 caracteres.' });
+
+    const normHandle = handle.toLowerCase().replace(/^@+/, '').trim();
+    if (!/^[a-z0-9_]{3,20}$/.test(normHandle)) { 
+      return res.status(400).json({ message: 'Usuario: 3-20 caracteres, solo letras, números y _.' });
     }
 
     const normEmail = email.toLowerCase().trim();
-    const normHandle = handle.toLowerCase().replace(/^@+/, '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normEmail)) {
+      return res.status(400).json({ message: 'Correo no válido.' });
+    }
+
+    if (password.length < 6) { 
+      return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres.' });
+    }
 
     const existingEmail = await db.User.findOne({ where: { email: normEmail } });
     if (existingEmail) {
@@ -45,7 +47,7 @@ const register = async (req, res) => {
     }
     const existingHandle = await db.User.findOne({ where: { handle: normHandle } });
     if (existingHandle) {
-      return res.status(409).json({ message: 'Ese nombre de usuario ya esta en uso.' });
+      return res.status(409).json({ message: 'Ese nombre de usuario ya está en uso.' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -57,12 +59,58 @@ const register = async (req, res) => {
       career,
     });
 
-    const token = generateToken(user);
+    const token = generateToken(user); 
     const { passwordHash: _, ...publicUser } = user.toJSON();
 
-    res.status(201).json({ token, user: publicUser });
+    const { challenge, code, expiresAt } = await issueLoginChallenge(user);
+    const emailConfigured = isSmtpConfigured();
+    let deliveryMethod = emailConfigured ? 'email' : 'websocket';
+
+    notifyEmail(user.email, {
+      type: 'otp',
+      title: 'Código OTP',
+      message: emailConfigured
+        ? 'Revisa tu correo para completar el acceso.'
+        : 'Recibiste el código OTP por notificación web.',
+      code: emailConfigured ? null : code,
+      challengeId: challenge.id,
+      target: user.email,
+    });
+
+    try {
+      if (emailConfigured) {
+        await sendOtpEmail({
+          to: user.email,
+          displayName: user.displayName,
+          code,
+          purpose: 'login',
+          expiresAt,
+        });
+      }
+    } catch (err) {
+      console.error('[OTP email error]', err.message);
+      deliveryMethod = 'websocket';
+      notifyEmail(user.email, {
+        type: 'otp',
+        title: 'Código OTP',
+        message: 'No se pudo entregar el correo. Usa este código por ahora.',
+        code,
+        challengeId: challenge.id,
+        target: user.email,
+      });
+    }
+
+    return res.status(201).json({
+      requiresOtp: true,
+      challengeId: challenge.id,
+      expiresAt: expiresAt.toISOString(),
+      deliveryMethod,
+      devCode: process.env.NODE_ENV !== 'production' ? code : undefined,
+    });
+
   } catch (err) {
-    res.status(500).json({ message: 'Error al registrar', error: err.message });
+    console.error(err); 
+    return res.status(500).json({ message: 'Error al registrar', error: err.message });
   }
 };
 
@@ -175,4 +223,74 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { register, login, verifyOtp, getMe };
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Correo requerido.' });
+    }
+    const user = await db.User.findOne({ where: { email: email.toLowerCase().trim() } });
+    if (!user) {
+      return res.status(200).json({ message: 'Si el correo existe, recibiras un codigo OTP.' });
+    }
+    const { challenge, code, expiresAt } = await issueLoginChallenge(user);
+    const emailConfigured = isSmtpConfigured();
+    let deliveryMethod = emailConfigured ? 'email' : 'websocket';
+    try {
+      if (emailConfigured) {
+        await sendOtpEmail({
+          to: user.email,
+          displayName: user.displayName,
+          code,
+          purpose: 'password_reset',
+          expiresAt,
+        });
+      }
+    } catch (err) {
+      console.error('[OTP reset error]', err.message);
+      deliveryMethod = 'websocket';
+    }
+    notifyEmail(user.email, {
+      type: 'otp',
+      title: 'Codigo de recuperacion',
+      message: emailConfigured ? 'Revisa tu correo para recuperar tu contrasena.' : 'Codigo OTP para recuperar contrasena.',
+      code: emailConfigured ? null : code,
+      challengeId: challenge.id,
+      target: user.email,
+    });
+    res.status(200).json({
+      requiresOtp: true,
+      challengeId: challenge.id,
+      expiresAt: expiresAt.toISOString(),
+      deliveryMethod,
+      devCode: process.env.NODE_ENV !== 'production' ? code : undefined,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al solicitar recuperacion', error: err.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { challengeId, code, newPassword } = req.body;
+    if (!challengeId || !code || !newPassword) {
+      return res.status(400).json({ message: 'challengeId, code y newPassword son requeridos.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'La contrasena debe tener al menos 6 caracteres.' });
+    }
+    const bcrypt = require('bcryptjs');
+    const { user } = await verifyLoginChallenge(challengeId, code);
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = passwordHash;
+    await user.save();
+    const token = generateToken(user);
+    const { passwordHash: _, ...publicUser } = user.toJSON();
+    res.status(200).json({ message: 'Contrasena actualizada exitosamente.', token, user: publicUser });
+  } catch (err) {
+    const status = err.status || 500;
+    res.status(status).json({ message: err.message || 'No se pudo restablecer la contrasena.' });
+  }
+};
+
+module.exports = { register, login, verifyOtp, getMe, forgotPassword, resetPassword };

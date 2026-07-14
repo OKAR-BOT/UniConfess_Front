@@ -21,7 +21,19 @@ back/.env
 *.sqlite-journal
 back/data/
 
+# Test files (local only, not pushed to repo)
+back/jest.config.js
+back/src/__tests__/
+Fronted/src/__tests__/
+
+# Test dependencies
+back/node_modules/jest/
+back/node_modules/supertest/
+
 # Auto-generated Tailwind output
 Fronted/src/index.css
+
+# Uploaded images
+back/uploads/
 
 .idea

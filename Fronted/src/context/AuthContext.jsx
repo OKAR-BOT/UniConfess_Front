@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { apiRequest, isTokenExpired } from '../service/api';
 
 const AuthContext = createContext(null);
@@ -43,12 +43,20 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (input) => {
-    const data = await apiRequest('POST', 'auth/register', input);
+  const data = await apiRequest('POST', 'auth/register', input);
+
+  if (data?.requiresOtp) {
+    return data; 
+  }
+
+  if (data?.token && data?.user) {
     localStorage.setItem('uconfess_jwt', data.token);
     localStorage.setItem('uconfess_user', JSON.stringify(data.user));
     setUser(data.user);
     return data.user;
-  }, []);
+  }
+  return data;
+}, []);
 
   const verifyOtp = useCallback(async ({ challengeId, code }) => {
     const data = await apiRequest('POST', 'auth/otp/verify', { challengeId, code });
@@ -88,17 +96,84 @@ export function AuthProvider({ children }) {
     return apiRequest('DELETE', `confessions/${postId}`, null, true);
   }, []);
 
+  const updateConfessionById = useCallback(async (postId, data) => {
+    return apiRequest('PUT', `confessions/${postId}`, data, true);
+  }, []);
+
+  const blockUser = useCallback(async (blockedId) => {
+    return apiRequest('POST', 'blocks', { blockedId }, true);
+  }, []);
+
+  const unblockUser = useCallback(async (blockedId) => {
+    return apiRequest('DELETE', `blocks/${blockedId}`, null, true);
+  }, []);
+
+  const getBlockedUsers = useCallback(async () => {
+    return apiRequest('GET', 'blocks', null, true);
+  }, []);
+
+  const createReport = useCallback(async (data) => {
+    return apiRequest('POST', 'reports', data, true);
+  }, []);
+
+  const getReports = useCallback(async () => {
+    return apiRequest('GET', 'reports', null, true);
+  }, []);
+
+  const reviewReport = useCallback(async (id, status) => {
+    return apiRequest('PUT', `reports/${id}/review`, { status }, true);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail?.type === 'role_changed') {
+        refresh();
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('role_changed', handler);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('role_changed', handler);
+      }
+    };
+  }, [refresh]);
+
+  const uploadAvatar = useCallback(async (handle, file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const token = localStorage.getItem('uconfess_jwt');
+    const url = apiRequest.getUrl ? apiRequest.getUrl(`users/profile/${handle}/avatar`) : `${process.env.REACT_APP_API_URL || 'http://localhost:4000/api'}/users/profile/${handle}/avatar`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(data?.message || 'Error al subir avatar');
+    }
+    return data;
+  }, []);
+
   const value = useMemo(() => ({
     user, login, register, logout, refresh,
     verifyOtp,
     isAdmin, isPremium, canPostAnonymously,
     getAllUsers, updateUserRole, toggleUserBan,
     deleteConfessionById, setUserPremium,
+    updateConfessionById, blockUser, unblockUser,
+    getBlockedUsers, createReport, getReports, reviewReport,
+    uploadAvatar,
   }), [user, login, register, logout, refresh,
       verifyOtp,
       isAdmin, isPremium, canPostAnonymously,
       getAllUsers, updateUserRole, toggleUserBan,
-      deleteConfessionById, setUserPremium]);
+      deleteConfessionById, setUserPremium,
+      updateConfessionById, blockUser, unblockUser,
+      getBlockedUsers, createReport, getReports, reviewReport,
+      uploadAvatar]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

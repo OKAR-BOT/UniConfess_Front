@@ -12,6 +12,9 @@ import {
   deleteComment as apiDeleteComment,
 } from '../service/interactionsApi';
 import { formatRelativeTime } from '../utils/formatTime';
+import { getImageUrl } from '../service/api';
+import ConfirmModal from './ConfirmModal';
+import ConfessionModal from './ConfessionModal';
 
 const CATEGORIES = [
   { value: 'General', label: 'General' },
@@ -21,8 +24,6 @@ const CATEGORIES = [
   { value: 'Crush', label: 'Crush' },
   { value: 'Otro', label: 'Otro' },
 ];
-
-const AVATAR = 'https://img.freepik.com/vector-premium/ilustracion-plana-vectorial-escala-grises-icono-perfil-usuario-avatar-persona-imagen-perfil-silueta-genero-neutral-apto-perfiles-redes-sociales-iconos-protectores-pantalla-como-plantillax9xa_719432-2210.jpg?semt=ais_hybrid&w=740&q=80';
 
 function IconHeart({ filled }) {
   return (
@@ -225,7 +226,7 @@ function CommentsSection({ postId, userId, isAdmin }) {
 
 function ConfessionsSection({ variant = 'default' }) {
   const isFeed = variant === 'feed';
-  const { user, isAdmin, canPostAnonymously, deleteConfessionById } = useAuth();
+  const { user, isAdmin, canPostAnonymously, deleteConfessionById, updateConfessionById, createReport } = useAuth();
   const { tabId, announceConfession } = useRealtime();
   const location = useLocation();
   const [items, setItems] = useState([]);
@@ -243,6 +244,13 @@ function ConfessionsSection({ variant = 'default' }) {
 
   const [interactionMap, setInteractionMap] = useState({});
   const [openComments, setOpenComments] = useState({});
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmReport, setConfirmReport] = useState(null);
+  const [reportReason, setReportReason] = useState('');
+  const [selectedConfession, setSelectedConfession] = useState(null);
+  const [editingConfession, setEditingConfession] = useState(null);
+  const [editBody, setEditBody] = useState('');
+  const [editCategory, setEditCategory] = useState('General');
 
   const syncInteractions = useCallback(async (list, uid) => {
     if (!list || list.length === 0) {
@@ -362,6 +370,42 @@ function ConfessionsSection({ variant = 'default' }) {
     syncInteractions(items, user.id);
   }
 
+  async function handleDeletePost(id) {
+    try {
+      await deleteConfessionById(id);
+      setConfirmDelete(null);
+      refresh();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function handleEditPost(e) {
+    e.preventDefault();
+    if (!editingConfession) return;
+    if (!editBody || editBody.trim().length < 10) {
+      alert('La publicacion debe tener al menos 10 caracteres.');
+      return;
+    }
+    try {
+      await updateConfessionById(editingConfession.id, { body: editBody, category: editCategory });
+      setEditingConfession(null);
+      refresh();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function handleReportPost(id, reason) {
+    try {
+      await createReport({ confessionId: id, reason });
+      setConfirmReport(null);
+      setReportReason('');
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
   return (
     <section id="publicar" className={`scroll-mt-24 ${isFeed ? 'pb-32 pt-2' : 'border-t border-theme pb-24 pt-10 sm:pt-16'}`}>
       <div className={`mx-auto px-4 sm:px-6 ${isFeed ? 'max-w-3xl lg:max-w-4xl' : 'max-w-6xl lg:px-8'}`}>
@@ -390,7 +434,21 @@ function ConfessionsSection({ variant = 'default' }) {
                 className="card-utp p-4 flex items-center gap-3 cursor-pointer hover:bg-theme/5 transition duration-200" 
                 onClick={() => setIsFormOpen(true)}
               >
-                <img src={AVATAR} alt="" className="size-10 shrink-0 rounded-full border border-theme object-cover shadow-sm" />
+                {user.avatarUrl ? (
+                  <img
+                    src={getImageUrl(user.avatarUrl)}
+                    alt=""
+                    className="size-10 shrink-0 rounded-full border border-theme object-cover shadow-sm"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      const fb = e.target.parentNode.querySelector('.cs-trigger-fb');
+                      if (fb) fb.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <div className={`size-10 shrink-0 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-sm font-bold ${user.avatarUrl ? 'cs-trigger-fb hidden' : ''}`}>
+                  {user.displayName?.charAt(0).toUpperCase()}
+                </div>
                 <div className="flex-1 bg-theme/5 border border-theme rounded-full px-4 py-2 text-sm text-theme-muted hover:bg-theme/10 transition duration-150 text-left">
                   ¿Qué quieres confesar hoy, {user.displayName}?
                 </div>
@@ -404,7 +462,21 @@ function ConfessionsSection({ variant = 'default' }) {
                     
                     <form onSubmit={handleSubmit} className="space-y-4 flex flex-col flex-1">
                       <div className="flex items-center gap-3">
-                        <img src={AVATAR} alt="" className="size-9 shrink-0 rounded-full border border-theme object-cover shadow-sm" />
+                        {user.avatarUrl ? (
+                          <img
+                            src={getImageUrl(user.avatarUrl)}
+                            alt=""
+                            className="size-9 shrink-0 rounded-full border border-theme object-cover shadow-sm"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              const fb = e.target.parentNode.querySelector('.cs-form-fb');
+                              if (fb) fb.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`size-9 shrink-0 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-sm font-bold ${user.avatarUrl ? 'cs-form-fb hidden' : ''}`}>
+                          {user.displayName?.charAt(0).toUpperCase()}
+                        </div>
                         <div className="text-left min-w-0 flex-1">
                           <div className="text-sm font-bold text-theme truncate">{user.displayName}</div>
                           <div className="text-xs text-theme-muted truncate">@{user.handle} · {user.career}</div>
@@ -542,22 +614,40 @@ function ConfessionsSection({ variant = 'default' }) {
                   <li key={c.id} id={`confession-${c.id}`} className="post-card transition-all duration-300">
                     <article>
                       <div className="flex flex-wrap items-start gap-4">
-                        <img src={AVATAR} alt="" className="size-10 shrink-0 !rounded-full border border-theme object-cover" />
+                        {c.authorAvatarUrl ? (
+                          <img
+                            src={getImageUrl(c.authorAvatarUrl)}
+                            alt=""
+                            className="size-10 shrink-0 rounded-full border border-theme object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              const fallback = e.target.parentNode.querySelector('.cs-avatar-fallback');
+                              if (fallback) fallback.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`size-10 shrink-0 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-sm font-bold ${c.authorAvatarUrl ? 'cs-avatar-fallback hidden' : ''}`}>
+                          {c.displayName?.charAt(0).toUpperCase()}
+                        </div>
                         <div className="min-w-0 flex-1 overflow-hidden">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <Link to={`/profile/${c.handle}`} className="truncate text-sm font-bold text-theme hover:text-utp-red transition-colors">{c.displayName}</Link>
                             <Link to={`/profile/${c.handle}`} className="truncate text-xs text-theme-muted hover:text-utp-red transition-colors">@{c.handle}</Link>
                             {(c.authorRole === 'premium' || c.authorRole === 'admin') && <span className="text-[10px] font-semibold text-amber-500 border border-amber-500 rounded px-1">PREMIUM</span>}
-                            {c.displayName === 'Anonimo UTP' ? <span className="shrink-0 text-xs" title="Anonimo">🎭</span> : null}
+                            {c.displayName === 'Anonimo UTP' ? <span className="shrink-0 text-xs text-theme-muted" title="Anonimo">Anonimo</span> : null}
                             <time dateTime={c.createdAt} className="text-xs text-theme-muted ml-auto" title={c.createdAt}>
                               {formatRelativeTime(c.createdAt)}
                             </time>
                             <span className="category-pill">{c.category}</span>
                           </div>
                           <p className="mt-0.5 text-xs text-theme-muted">{c.career}</p>
-                          <p className="mt-4 break-words text-sm leading-relaxed text-theme-secondary [overflow-wrap:anywhere] whitespace-pre-wrap">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedConfession(c)}
+                            className="w-full text-left mt-4 break-words text-sm leading-relaxed text-theme-secondary [overflow-wrap:anywhere] whitespace-pre-wrap hover:text-utp-red transition-colors"
+                          >
                             {c.body}
-                          </p>
+                          </button>
 
                           <div className="mt-5 flex flex-wrap items-center gap-6 border-t border-theme pt-4">
                             <button
@@ -586,13 +676,34 @@ function ConfessionsSection({ variant = 'default' }) {
                               <IconHeart filled={ix.liked} />
                               <span className="tabular-nums">{ix.likeCount}</span>
                             </button>
-                            {isAdmin ? (
+                            {user && (user.id === c.userId || isAdmin) ? (
                               <button
                                 type="button"
-                                onClick={async () => { await deleteConfessionById(c.id); refresh(); }}
+                                onClick={() => setConfirmDelete(c.id)}
                                 className="ml-auto flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-utp-red transition hover:bg-utp-red/10"
                               >
-                                🗑️ Eliminar
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                Eliminar
+                              </button>
+                            ) : null}
+                            {user && user.id === c.userId && (isAdmin || user.role === 'premium') ? (
+                              <button
+                                type="button"
+                                onClick={() => { setEditingConfession(c); setEditBody(c.body); setEditCategory(c.category || 'General'); }}
+                                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-theme-muted transition hover:text-utp-red"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                Editar
+                              </button>
+                            ) : null}
+                            {user && user.id !== c.userId ? (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmReport({ id: c.id, body: c.body })}
+                                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-theme-muted transition hover:text-amber-500"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>
+                                Reportar
                               </button>
                             ) : null}
                           </div>
@@ -620,6 +731,80 @@ function ConfessionsSection({ variant = 'default' }) {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Eliminar publicacion"
+        message="Esta accion no se puede deshacer. La publicacion se eliminara permanentemente."
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={() => handleDeletePost(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
+
+      {confirmReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="card-utp w-full max-w-md p-6 border border-theme rounded-2xl shadow-2xl animate-modal-in" style={{ background: 'var(--color-card-solid)', backdropFilter: 'none' }}>
+            <h3 className="text-base font-black text-theme text-center mb-4">Reportar publicacion</h3>
+            <form onSubmit={(e) => { e.preventDefault(); handleReportPost(confirmReport.id, reportReason); }}>
+              <label className="block text-xs font-bold text-theme-muted uppercase tracking-wider mb-2">
+                Motivo del reporte
+              </label>
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="Explica por que reportas esta publicacion..."
+                className="input-utp w-full text-sm resize-none"
+                rows={4}
+                minLength={10}
+                required
+              />
+              <p className="text-[10px] text-theme-muted mt-1 mb-4">Minimo 10 caracteres.</p>
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={() => { setConfirmReport(null); setReportReason(''); }} className="btn-utp-secondary px-4 py-2 text-sm">
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-utp-primary px-4 py-2 text-sm font-bold" disabled={reportReason.trim().length < 10}>
+                  Reportar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {editingConfession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="card-utp w-full max-w-lg p-7 relative border border-theme rounded-3xl shadow-2xl animate-modal-in" style={{ background: 'var(--color-card-solid)', backdropFilter: 'none' }}>
+            <h3 className="text-base font-black text-theme text-center pb-2 border-b border-theme mb-4">Editar publicacion</h3>
+            <form onSubmit={handleEditPost} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold text-theme-muted uppercase tracking-wider">Categoria</label>
+                <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className="input-utp mt-1 text-xs w-full py-1.5 px-3.5">
+                  {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Contenido</label>
+                <textarea required rows={7} maxLength={4000} value={editBody} onChange={(e) => setEditBody(e.target.value)} className="input-utp resize-none px-3 py-3 text-sm w-full" />
+                <p className="mt-1 text-right text-[10px] text-theme-muted">{editBody.length} / 4000</p>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setEditingConfession(null)} className="btn-utp-secondary px-5 py-2 text-sm">Cancelar</button>
+                <button type="submit" className="btn-utp-primary px-6 py-2 text-sm font-bold">Guardar cambios</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {selectedConfession && (
+        <ConfessionModal
+          confession={selectedConfession}
+          onClose={() => setSelectedConfession(null)}
+        />
+      )}
     </section>
   );
 }
