@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { listConfessions } from '../../service/confessionsApi';
+import { apiRequest } from '../../service/api';
 
 function SkeletonStat() {
   return (
@@ -30,23 +30,25 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [counts, setCounts] = useState({ total: 0, premium: 0, admin: 0, banned: 0, confessions: 0 });
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const [all, confs] = await Promise.all([
+        const [all, statsData] = await Promise.all([
           getAllUsers(),
-          listConfessions(),
+          apiRequest('GET', 'admin/stats', null, true).catch(() => null),
         ]);
         if (cancelled) return;
         setUsers(all);
+        setStats(statsData);
         setCounts({
           total: all.length,
           premium: all.filter((u) => u.role === 'premium').length,
           admin: all.filter((u) => u.role === 'admin').length,
           banned: all.filter((u) => u.isBanned).length,
-          confessions: Array.isArray(confs) ? confs.length : 0,
+          confessions: statsData?.postsThisYear || 0,
         });
       } catch {
         if (!cancelled) {
@@ -108,6 +110,153 @@ function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      {stats && (
+        <>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="stat-chip">
+              <p className="text-lg font-black text-theme">{stats.postsToday}</p>
+              <p className="text-xs text-theme-muted">Publicaciones hoy</p>
+            </div>
+            <div className="stat-chip">
+              <p className="text-lg font-black text-theme">{stats.postsThisMonth}</p>
+              <p className="text-xs text-theme-muted">Publicaciones este mes</p>
+            </div>
+            <div className="stat-chip">
+              <p className="text-lg font-black text-theme">{stats.reportsPending}</p>
+              <p className="text-xs text-theme-muted">Reportes pendientes</p>
+            </div>
+            <div className="stat-chip">
+              <p className="text-lg font-black text-theme">{stats.bannedThisMonth}</p>
+              <p className="text-xs text-theme-muted">Baneados este mes</p>
+            </div>
+          </div>
+
+          {/* Charts */}
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Horizontal bar chart con % */}
+            <div className="card-utp p-5">
+              <p className="text-sm font-bold uppercase tracking-wider text-theme-muted mb-4">Publicaciones</p>
+              <div className="space-y-5">
+                {(() => {
+                  const max = Math.max(stats.postsToday, stats.postsThisMonth, stats.postsThisYear, 1);
+                  const bars = [
+                    { label: 'Hoy', value: stats.postsToday, pct: ((stats.postsToday / max) * 100).toFixed(0), color: '#d22630' },
+                    { label: 'Este mes', value: stats.postsThisMonth, pct: ((stats.postsThisMonth / max) * 100).toFixed(0), color: '#f59e0b' },
+                    { label: 'Este año', value: stats.postsThisYear, pct: ((stats.postsThisYear / max) * 100).toFixed(0), color: '#3b82f6' },
+                  ];
+                  return bars.map((item) => (
+                    <div key={item.label}>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="font-semibold text-theme">{item.label}</span>
+                        <span className="text-theme-muted font-mono">{item.value} ({item.pct}%)</span>
+                      </div>
+                      <div className="h-4 rounded-sm bg-[#1e293b] overflow-hidden">
+                        <div
+                          className="h-full rounded-sm transition-all duration-700 flex items-center justify-end pr-1"
+                          style={{ width: `${item.pct}%`, backgroundColor: item.color }}
+                        >
+                          <span className="text-[10px] font-bold text-white leading-none">{item.pct}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+
+            {/* Pie chart circular */}
+            <div className="card-utp p-5">
+              <p className="text-sm font-bold uppercase tracking-wider text-theme-muted mb-4">Usuarios por rol</p>
+              {(() => {
+                const total = Math.max(counts.total, 1);
+                const roles = [
+                  { label: 'Admin', value: counts.admin, color: '#d22630' },
+                  { label: 'Premium', value: counts.premium, color: '#f59e0b' },
+                  { label: 'Usuario', value: Math.max(0, total - counts.admin - counts.premium), color: '#374151' },
+                ];
+                const segments = [];
+                let cumulative = 0;
+                roles.forEach((r) => {
+                  const pct = (r.value / total) * 100;
+                  if (pct > 0) {
+                    const start = cumulative;
+                    cumulative += pct;
+                    segments.push({ ...r, pct: pct.toFixed(1), start, end: cumulative });
+                  }
+                });
+                if (segments.length === 0) segments.push({ label: 'Sin datos', value: 1, color: '#374151', pct: '100', start: 0, end: 100 });
+
+                const gradientParts = segments.map((s) => `${s.color} ${s.start}% ${s.end}%`).join(', ');
+                return (
+                  <div className="flex items-center gap-8">
+                    <div
+                      className="shrink-0 size-32 rounded-full shadow-lg"
+                      style={{ background: `conic-gradient(${gradientParts})` }}
+                    />
+                    <div className="space-y-3">
+                      {roles.filter((r) => r.value > 0).map((r) => (
+                        <div key={r.label} className="flex items-center gap-2.5">
+                          <span className="size-3.5 rounded-sm" style={{ backgroundColor: r.color }} />
+                          <span className="text-sm font-semibold text-theme">{r.label}</span>
+                          <span className="text-sm text-theme-muted font-mono">{((r.value / total) * 100).toFixed(0)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="card-utp p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-theme-muted mb-2">Mas likeado hoy</p>
+              {stats.mostLikedToday ? (
+                <div>
+                  <p className="text-xs text-theme truncate">{stats.mostLikedToday.confession?.body || 'Confesion'}</p>
+                  <p className="text-xs text-theme-muted mt-1">{stats.mostLikedToday.count} likes</p>
+                </div>
+              ) : (
+                <p className="text-xs text-theme-muted">Sin datos hoy</p>
+              )}
+            </div>
+            <div className="card-utp p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-theme-muted mb-2">Mas comentado hoy</p>
+              {stats.mostCommentedToday ? (
+                <div>
+                  <p className="text-xs text-theme truncate">{stats.mostCommentedToday.confession?.body || 'Confesion'}</p>
+                  <p className="text-xs text-theme-muted mt-1">{stats.mostCommentedToday.count} comentarios</p>
+                </div>
+              ) : (
+                <p className="text-xs text-theme-muted">Sin datos hoy</p>
+              )}
+            </div>
+            <div className="card-utp p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-theme-muted mb-2">Mas likeado del mes</p>
+              {stats.mostLikedMonth ? (
+                <div>
+                  <p className="text-xs text-theme truncate">{stats.mostLikedMonth.confession?.body || 'Confesion'}</p>
+                  <p className="text-xs text-theme-muted mt-1">{stats.mostLikedMonth.count} likes</p>
+                </div>
+              ) : (
+                <p className="text-xs text-theme-muted">Sin datos este mes</p>
+              )}
+            </div>
+            <div className="card-utp p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-theme-muted mb-2">Mas comentado del mes</p>
+              {stats.mostCommentedMonth ? (
+                <div>
+                  <p className="text-xs text-theme truncate">{stats.mostCommentedMonth.confession?.body || 'Confesion'}</p>
+                  <p className="text-xs text-theme-muted mt-1">{stats.mostCommentedMonth.count} comentarios</p>
+                </div>
+              ) : (
+                <p className="text-xs text-theme-muted">Sin datos este mes</p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <Link to="/admin/users" className="card-utp-interactive group flex items-center justify-between p-6">
