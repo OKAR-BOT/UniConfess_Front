@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { apiRequest, isTokenExpired } from '../service/api';
 
 const AuthContext = createContext(null);
@@ -116,30 +116,6 @@ export function AuthProvider({ children }) {
     return apiRequest('POST', 'reports', data, true);
   }, []);
 
-  const getReports = useCallback(async () => {
-    return apiRequest('GET', 'reports', null, true);
-  }, []);
-
-  const reviewReport = useCallback(async (id, status) => {
-    return apiRequest('PUT', `reports/${id}/review`, { status }, true);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.detail?.type === 'role_changed') {
-        refresh();
-      }
-    };
-    if (typeof window !== 'undefined') {
-      window.addEventListener('role_changed', handler);
-    }
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('role_changed', handler);
-      }
-    };
-  }, [refresh]);
-
   const uploadAvatar = useCallback(async (handle, file) => {
     const formData = new FormData();
     formData.append('avatar', file);
@@ -164,16 +140,14 @@ export function AuthProvider({ children }) {
     getAllUsers, updateUserRole, toggleUserBan,
     deleteConfessionById, setUserPremium,
     updateConfessionById, blockUser, unblockUser,
-    getBlockedUsers, createReport, getReports, reviewReport,
-    uploadAvatar,
+    getBlockedUsers, createReport, uploadAvatar,
   }), [user, login, register, logout, refresh,
       verifyOtp,
       isAdmin, isPremium, canPostAnonymously,
       getAllUsers, updateUserRole, toggleUserBan,
       deleteConfessionById, setUserPremium,
       updateConfessionById, blockUser, unblockUser,
-      getBlockedUsers, createReport, getReports, reviewReport,
-      uploadAvatar]);
+      getBlockedUsers, createReport, uploadAvatar]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

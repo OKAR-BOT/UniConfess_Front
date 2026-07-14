@@ -100,11 +100,6 @@ export function RealtimeProvider({ children }) {
 
   const handleNotification = useCallback((payload = {}) => {
     const notification = storeNotification(payload);
-    if (payload?.type === 'role_changed') {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('role_changed', { detail: payload }));
-      }
-    }
     return notification;
   }, [storeNotification]);
 

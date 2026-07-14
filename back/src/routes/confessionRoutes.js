@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const confessionController = require('../controllers/confessionController');
-const { verifyToken, optionalAuth } = require('../middlewares/auth');
+const { verifyToken } = require('../middlewares/auth');
 
-router.get('/', optionalAuth, confessionController.getAllConfessions);
+router.get('/', confessionController.getAllConfessions);
 router.post('/', verifyToken, confessionController.createConfession);
 router.delete('/:id', verifyToken, confessionController.deleteConfession);
 router.put('/:id/pin', verifyToken, confessionController.togglePin);

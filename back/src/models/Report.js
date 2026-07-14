@@ -42,7 +42,6 @@ const Report = sequelize.define('Report', {
 });
 
 Report.belongsTo(User, { foreignKey: 'reporterId', as: 'reporter' });
-Report.belongsTo(User, { foreignKey: 'reportedUserId', as: 'reportedUser' });
 Report.belongsTo(User, { foreignKey: 'reviewedBy', as: 'reviewer' });
 
 module.exports = Report;

@@ -12,7 +12,6 @@ const interactionRoutes = require('./routes/interactionRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const blockRoutes = require('./routes/blockRoutes');
 const reportRoutes = require('./routes/reportRoutes');
-const adminRoutes = require('./routes/adminRoutes');
 const db = require('./models');
 const migrate = require('./migrate');
 const seedAdmin = require('./seeders/seed-admin');
@@ -35,7 +34,6 @@ app.use('/api/confessions', commentRoutes);
 app.use('/api/interactions', interactionRoutes);
 app.use('/api/blocks', blockRoutes);
 app.use('/api/reports', reportRoutes);
-app.use('/api/admin', adminRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 const buildPath = path.join(__dirname, '..', '..', 'Fronted', 'build');

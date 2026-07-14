@@ -2,11 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { apiRequest, getImageUrl } from '../service/api';
+import { apiRequest } from '../service/api';
 import { formatRelativeTime } from '../utils/formatTime';
 import ConfirmModal from '../components/ConfirmModal';
-import ConfessionModal from '../components/ConfessionModal';
-import { listConfessions } from '../service/confessionsApi';
 
 export default function Profile() {
   const { handle } = useParams();
@@ -25,20 +23,15 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [confirmBlock, setConfirmBlock] = useState(null);
   const [confirmReport, setConfirmReport] = useState(null);
-  const [reportReason, setReportReason] = useState('');
-  const [selectedConfession, setSelectedConfession] = useState(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     setError('');
-    setAvatarError(false);
     Promise.all([
-      apiRequest('GET', `/users/profile/${handle}`, null, true),
-      apiRequest('GET', `/users/profile/${handle}/confessions`, null, true),
+      apiRequest('GET', `/users/profile/${handle}`),
+      apiRequest('GET', `/users/profile/${handle}/confessions`),
     ])
       .then(([profileRes, confessionsRes]) => {
         setProfile(profileRes);
@@ -49,11 +42,6 @@ export default function Profile() {
       })
       .catch((err) => setError(err.message || 'Error al cargar perfil'))
       .finally(() => setLoading(false));
-
-    listConfessions().then((all) => {
-      const userPosts = (all || []).filter((c) => c.handle === handle?.toLowerCase());
-      setRecentActivity(userPosts.slice(0, 3));
-    }).catch(() => {});
   }, [handle]);
 
   const handleSave = async () => {
@@ -77,12 +65,11 @@ export default function Profile() {
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      alert('La imagen debe ser menor a 10MB.');
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen debe ser menor a 5MB.');
       return;
     }
     setUploadingAvatar(true);
-    setAvatarError(false);
     try {
       const updated = await uploadAvatar(handle, file);
       setProfile((prev) => ({ ...prev, avatarUrl: updated.avatarUrl }));
@@ -119,9 +106,8 @@ export default function Profile() {
 
   const handleReportUser = async () => {
     try {
-      await createReport({ reportedUserId: profile.id, reason: reportReason });
+      await createReport({ reportedUserId: profile.id, reason: confirmReport });
       setConfirmReport(null);
-      setReportReason('');
     } catch (err) {
       alert(err.message || 'Error al reportar');
     }
@@ -185,15 +171,10 @@ export default function Profile() {
         <div className="bg-theme-bg-secondary p-6">
           <div className="flex items-start gap-4">
             <div className={`relative shrink-0 ${profile.bannerColor ? '-mt-12 border-4 border-theme-bg-secondary' : ''}`}>
-              {profile.avatarUrl && !avatarError ? (
-                <img
-                  src={getImageUrl(profile.avatarUrl)}
-                  alt=""
-                  className="w-20 h-20 rounded-full object-cover border border-theme"
-                  onError={() => setAvatarError(true)}
-                />
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt="" className="w-16 h-16 rounded-full object-cover border border-theme" />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-2xl font-bold">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-2xl font-bold">
                   {profile.displayName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -305,7 +286,7 @@ export default function Profile() {
                   </button>
                 )}
                 <button
-                  onClick={() => setConfirmReport(true)}
+                  onClick={() => setConfirmReport(`Reportar usuario ${profile.displayName} (@${profile.handle})`)}
                   className="text-xs text-amber-500 hover:underline"
                 >
                   Reportar
@@ -368,116 +349,37 @@ export default function Profile() {
         onCancel={() => setConfirmBlock(null)}
       />
 
-      {confirmReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="card-utp w-full max-w-md p-6 border border-theme rounded-2xl shadow-2xl animate-modal-in" style={{ background: 'var(--color-card-solid)', backdropFilter: 'none' }}>
-            <h3 className="text-base font-black text-theme text-center mb-4">Reportar usuario</h3>
-            <form onSubmit={(e) => { e.preventDefault(); handleReportUser(); }}>
-              <label className="block text-xs font-bold text-theme-muted uppercase tracking-wider mb-2">
-                Motivo del reporte
-              </label>
-              <textarea
-                value={reportReason}
-                onChange={(e) => setReportReason(e.target.value)}
-                placeholder="Explica por que reportas a este usuario..."
-                className="input-utp w-full text-sm resize-none"
-                rows={4}
-                minLength={10}
-                required
-              />
-              <p className="text-[10px] text-theme-muted mt-1 mb-4">Minimo 10 caracteres.</p>
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => { setConfirmReport(null); setReportReason(''); }} className="btn-utp-secondary px-4 py-2 text-sm">
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-utp-primary px-4 py-2 text-sm font-bold" disabled={reportReason.trim().length < 10}>
-                  Reportar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {isOwner && isPremiumOrAdmin && (
-        <div className="mt-4 mb-4 p-4 rounded-xl border border-theme-border bg-theme-bg-secondary">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <p className="text-sm font-bold text-theme">Foto de perfil</p>
-              <p className="text-xs text-theme-muted">JPG, PNG o WebP. Maximo 10MB.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingAvatar}
-              className="btn-utp-primary text-xs px-4 py-2"
-            >
-              {uploadingAvatar ? 'Subiendo...' : 'Cambiar foto'}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".jpg,.jpeg,.png,.gif,.webp"
-              className="hidden"
-              onChange={handleAvatarChange}
-            />
-          </div>
-        </div>
-      )}
-
-      {profile.bio || profile.avatarUrl ? null : isOwner && (
-        <div className="mt-4 mb-4 p-4 rounded-xl border border-dashed border-amber-500/50 bg-amber-500/5">
-          <p className="text-xs font-semibold text-amber-500">
-            Tu perfil se ve vacio. Sube una foto de perfil y agrega una biografia para personalizarlo. (Premium)
-          </p>
-        </div>
-      )}
-
-      {recentActivity.length > 0 && (
-        <div className="mt-4 mb-4 p-4 rounded-xl border border-theme-border bg-theme-bg-secondary">
-          <p className="text-xs font-bold uppercase tracking-wider text-theme-muted mb-3">Actividad reciente</p>
-          <div className="space-y-2">
-            {recentActivity.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setSelectedConfession(c)}
-                className="w-full text-left p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-              >
-                <p className="text-xs text-theme-muted">{c.category} &middot; {formatRelativeTime(c.createdAt)}</p>
-                <p className="text-sm text-theme truncate">{c.body}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!confirmReport}
+        title="Reportar usuario"
+        message={confirmReport || 'Al reportar, un administrador revisara el perfil.'}
+        confirmLabel="Reportar"
+        cancelLabel="Cancelar"
+        variant="warning"
+        onConfirm={handleReportUser}
+        onCancel={() => setConfirmReport(null)}
+      />
 
       {filtered.length === 0 ? (
         <p className="text-center text-theme-muted py-8">
-          {tab === 'confessions' ? (
-            isOwner ? 'Aun no has publicado nada. Crea tu primera confesion en el feed.' : 'No hay confesiones aun.'
-          ) : 'No hay reposts aun.'}
+          {tab === 'confessions' ? 'No hay confesiones aún.' : 'No hay reposts aún.'}
         </p>
       ) : (
         <div className="space-y-3">
           {filtered.map((c) => (
             <div key={c.id} className={`bg-theme-bg-secondary rounded-xl border p-4 ${c.isPinned ? 'border-amber-500' : 'border-theme-border'}`}>
               <div className="flex items-center gap-2 mb-2">
-                {c.isPinned && <span className="text-xs text-amber-500 font-semibold">Fijado</span>}
+                {c.isPinned && <span className="text-xs text-amber-500 font-semibold">📌 Fijado</span>}
                 <span className="text-xs text-theme-muted">
                   {formatRelativeTime(c.createdAt)}
                 </span>
                 <span className="category-pill">{c.category}</span>
                 {c.isRepost && <span className="text-xs text-theme-muted">(repost)</span>}
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedConfession(c)}
-                className="w-full text-left text-sm text-theme hover:text-utp-red transition-colors"
-              >
+              <Link to={`/confession/${c.id}`} className="text-sm text-theme hover:text-utp-red transition-colors">
                 {c.title && <h3 className="font-semibold mb-1">{c.title}</h3>}
                 <p className="whitespace-pre-wrap break-words">{c.body}</p>
-              </button>
+              </Link>
               {isOwner && isPremiumOrAdmin && tab === 'confessions' && (
                 <button
                   onClick={() => handlePinToggle(c.id)}
@@ -488,26 +390,6 @@ export default function Profile() {
               )}
             </div>
           ))}
-        </div>
-      )}
-
-      {selectedConfession && (
-        <ConfessionModal
-          confession={selectedConfession}
-          onClose={() => setSelectedConfession(null)}
-        />
-      )}
-
-      {uploadingAvatar && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
-          <div className="card-utp p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
-            <svg className="animate-spin h-8 w-8 text-utp-red" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <p className="text-sm font-bold text-theme">Comprimiendo y subiendo imagen...</p>
-            <p className="text-xs text-theme-muted">Esto puede tomar unos segundos.</p>
-          </div>
         </div>
       )}
     </div>

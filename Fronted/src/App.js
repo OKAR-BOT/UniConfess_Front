@@ -20,7 +20,6 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminConfessions from './pages/admin/AdminConfessions';
-import AdminReports from './pages/admin/AdminReports';
 import { useAuth } from './context/AuthContext';
 import { useEffect, useRef, useState } from 'react';
 
@@ -103,8 +102,8 @@ function AppRoutes() {
       <NotificationTray />
 
       {flashMessage ? (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] animate-slide-down">
-          <div className="flex items-start justify-between gap-4 rounded-lg border border-green-500/30 bg-green-500/10 px-5 py-3 text-green-700 shadow-2xl dark:text-green-300 backdrop-blur-md">
+        <div className="mx-auto mt-4 w-full max-w-5xl px-4">
+          <div className="flex items-start justify-between gap-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-green-700 shadow-sm dark:text-green-300">
             <div>
               <p className="text-sm font-black">{flashMessage.title}</p>
               <p className="mt-0.5 text-sm">{flashMessage.message}</p>
@@ -136,7 +135,6 @@ function AppRoutes() {
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="confessions" element={<AdminConfessions />} />
-            <Route path="reports" element={<AdminReports />} />
           </Route>
         </Route>
 

@@ -3,34 +3,16 @@ const { notifyAll } = require('../realtime/socket');
 
 const getAllConfessions = async (req, res) => {
   try {
-    let blockedIds = [];
-    if (req.userId) {
-      const blocksGiven = await db.Block.findAll({
-        where: { blockerId: req.userId },
-        attributes: ['blockedId'],
-      });
-      const blocksReceived = await db.Block.findAll({
-        where: { blockedId: req.userId },
-        attributes: ['blockerId'],
-      });
-      blockedIds = [
-        ...blocksGiven.map(b => b.blockedId),
-        ...blocksReceived.map(b => b.blockerId),
-      ];
-    }
     const confessions = await db.Confession.findAll({
       order: [['createdAt', 'DESC']],
-      include: [{ model: db.User, attributes: ['role', 'avatarUrl'], as: 'user' }],
+      include: [{ model: db.User, attributes: ['role'], as: 'user' }],
     });
-    const result = confessions
-      .filter(c => !blockedIds.includes(c.userId))
-      .map((c) => {
-        const json = c.toJSON();
-        json.authorRole = json.user ? json.user.role : 'user';
-        json.authorAvatarUrl = json.user ? json.user.avatarUrl : null;
-        delete json.user;
-        return json;
-      });
+    const result = confessions.map((c) => {
+      const json = c.toJSON();
+      json.authorRole = json.user ? json.user.role : 'user';
+      delete json.user;
+      return json;
+    });
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener confesiones', error: err.message });

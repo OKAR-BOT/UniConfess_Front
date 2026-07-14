@@ -55,10 +55,3 @@ export function isTokenExpired() {
   if (!expiry) return true;
   return Date.now() >= expiry.getTime();
 }
-
-export function getImageUrl(path) {
-  if (!path) return null;
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  const base = API_BASE.replace(/\/api\/?$/, '');
-  return `${base}${path}`;
-}

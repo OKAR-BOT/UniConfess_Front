@@ -30,7 +30,6 @@ const getReports = async (req, res) => {
       order: [['createdAt', 'DESC']],
       include: [
         { model: db.User, as: 'reporter', attributes: ['id', 'displayName', 'handle'] },
-        { model: db.User, as: 'reportedUser', attributes: ['id', 'displayName', 'handle', 'reportStrikes'] },
         { model: db.User, as: 'reviewer', attributes: ['id', 'displayName', 'handle'] },
       ],
     });
@@ -57,23 +56,6 @@ const reviewReport = async (req, res) => {
     report.status = status;
     report.reviewedBy = req.userId;
     await report.save();
-
-    if (status === 'approved') {
-      if (report.confessionId) {
-        await db.Confession.destroy({ where: { id: report.confessionId } });
-      }
-      if (report.reportedUserId) {
-        const reportedUser = await db.User.findByPk(report.reportedUserId);
-        if (reportedUser) {
-          reportedUser.reportStrikes = (reportedUser.reportStrikes || 0) + 1;
-          if (reportedUser.reportStrikes >= 10) {
-            reportedUser.isBanned = true;
-          }
-          await reportedUser.save();
-        }
-      }
-    }
-
     res.status(200).json({ message: `Reporte ${status === 'approved' ? 'aprobado' : 'rechazado'}.`, report });
   } catch (err) {
     res.status(500).json({ message: 'Error al revisar reporte', error: err.message });
