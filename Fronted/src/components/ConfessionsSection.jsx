@@ -12,7 +12,9 @@ import {
   deleteComment as apiDeleteComment,
 } from '../service/interactionsApi';
 import { formatRelativeTime } from '../utils/formatTime';
+import { getImageUrl } from '../service/api';
 import ConfirmModal from './ConfirmModal';
+import ConfessionModal from './ConfessionModal';
 
 const CATEGORIES = [
   { value: 'General', label: 'General' },
@@ -22,8 +24,6 @@ const CATEGORIES = [
   { value: 'Crush', label: 'Crush' },
   { value: 'Otro', label: 'Otro' },
 ];
-
-const AVATAR = 'https://img.freepik.com/vector-premium/ilustracion-plana-vectorial-escala-grises-icono-perfil-usuario-avatar-persona-imagen-perfil-silueta-genero-neutral-apto-perfiles-redes-sociales-iconos-protectores-pantalla-como-plantillax9xa_719432-2210.jpg?semt=ais_hybrid&w=740&q=80';
 
 function IconHeart({ filled }) {
   return (
@@ -246,6 +246,8 @@ function ConfessionsSection({ variant = 'default' }) {
   const [openComments, setOpenComments] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmReport, setConfirmReport] = useState(null);
+  const [reportReason, setReportReason] = useState('');
+  const [selectedConfession, setSelectedConfession] = useState(null);
   const [editingConfession, setEditingConfession] = useState(null);
   const [editBody, setEditBody] = useState('');
   const [editCategory, setEditCategory] = useState('General');
@@ -394,10 +396,11 @@ function ConfessionsSection({ variant = 'default' }) {
     }
   }
 
-  async function handleReportPost(id, content) {
+  async function handleReportPost(id, reason) {
     try {
-      await createReport({ confessionId: id, reason: content || 'Reporte de confesion' });
+      await createReport({ confessionId: id, reason });
       setConfirmReport(null);
+      setReportReason('');
     } catch (err) {
       alert(err.message);
     }
@@ -431,7 +434,21 @@ function ConfessionsSection({ variant = 'default' }) {
                 className="card-utp p-4 flex items-center gap-3 cursor-pointer hover:bg-theme/5 transition duration-200" 
                 onClick={() => setIsFormOpen(true)}
               >
-                <img src={AVATAR} alt="" className="size-10 shrink-0 rounded-full border border-theme object-cover shadow-sm" />
+                {user.avatarUrl ? (
+                  <img
+                    src={getImageUrl(user.avatarUrl)}
+                    alt=""
+                    className="size-10 shrink-0 rounded-full border border-theme object-cover shadow-sm"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      const fb = e.target.parentNode.querySelector('.cs-trigger-fb');
+                      if (fb) fb.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <div className={`size-10 shrink-0 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-sm font-bold ${user.avatarUrl ? 'cs-trigger-fb hidden' : ''}`}>
+                  {user.displayName?.charAt(0).toUpperCase()}
+                </div>
                 <div className="flex-1 bg-theme/5 border border-theme rounded-full px-4 py-2 text-sm text-theme-muted hover:bg-theme/10 transition duration-150 text-left">
                   ¿Qué quieres confesar hoy, {user.displayName}?
                 </div>
@@ -445,7 +462,21 @@ function ConfessionsSection({ variant = 'default' }) {
                     
                     <form onSubmit={handleSubmit} className="space-y-4 flex flex-col flex-1">
                       <div className="flex items-center gap-3">
-                        <img src={AVATAR} alt="" className="size-9 shrink-0 rounded-full border border-theme object-cover shadow-sm" />
+                        {user.avatarUrl ? (
+                          <img
+                            src={getImageUrl(user.avatarUrl)}
+                            alt=""
+                            className="size-9 shrink-0 rounded-full border border-theme object-cover shadow-sm"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              const fb = e.target.parentNode.querySelector('.cs-form-fb');
+                              if (fb) fb.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`size-9 shrink-0 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-sm font-bold ${user.avatarUrl ? 'cs-form-fb hidden' : ''}`}>
+                          {user.displayName?.charAt(0).toUpperCase()}
+                        </div>
                         <div className="text-left min-w-0 flex-1">
                           <div className="text-sm font-bold text-theme truncate">{user.displayName}</div>
                           <div className="text-xs text-theme-muted truncate">@{user.handle} · {user.career}</div>
@@ -583,22 +614,40 @@ function ConfessionsSection({ variant = 'default' }) {
                   <li key={c.id} id={`confession-${c.id}`} className="post-card transition-all duration-300">
                     <article>
                       <div className="flex flex-wrap items-start gap-4">
-                        <img src={AVATAR} alt="" className="size-10 shrink-0 !rounded-full border border-theme object-cover" />
+                        {c.authorAvatarUrl ? (
+                          <img
+                            src={getImageUrl(c.authorAvatarUrl)}
+                            alt=""
+                            className="size-10 shrink-0 rounded-full border border-theme object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              const fallback = e.target.parentNode.querySelector('.cs-avatar-fallback');
+                              if (fallback) fallback.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`size-10 shrink-0 rounded-full bg-gradient-to-br from-utp-red to-amber-500 flex items-center justify-center text-white text-sm font-bold ${c.authorAvatarUrl ? 'cs-avatar-fallback hidden' : ''}`}>
+                          {c.displayName?.charAt(0).toUpperCase()}
+                        </div>
                         <div className="min-w-0 flex-1 overflow-hidden">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <Link to={`/profile/${c.handle}`} className="truncate text-sm font-bold text-theme hover:text-utp-red transition-colors">{c.displayName}</Link>
                             <Link to={`/profile/${c.handle}`} className="truncate text-xs text-theme-muted hover:text-utp-red transition-colors">@{c.handle}</Link>
                             {(c.authorRole === 'premium' || c.authorRole === 'admin') && <span className="text-[10px] font-semibold text-amber-500 border border-amber-500 rounded px-1">PREMIUM</span>}
-                            {c.displayName === 'Anonimo UTP' ? <span className="shrink-0 text-xs" title="Anonimo">🎭</span> : null}
+                            {c.displayName === 'Anonimo UTP' ? <span className="shrink-0 text-xs text-theme-muted" title="Anonimo">Anonimo</span> : null}
                             <time dateTime={c.createdAt} className="text-xs text-theme-muted ml-auto" title={c.createdAt}>
                               {formatRelativeTime(c.createdAt)}
                             </time>
                             <span className="category-pill">{c.category}</span>
                           </div>
                           <p className="mt-0.5 text-xs text-theme-muted">{c.career}</p>
-                          <p className="mt-4 break-words text-sm leading-relaxed text-theme-secondary [overflow-wrap:anywhere] whitespace-pre-wrap">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedConfession(c)}
+                            className="w-full text-left mt-4 break-words text-sm leading-relaxed text-theme-secondary [overflow-wrap:anywhere] whitespace-pre-wrap hover:text-utp-red transition-colors"
+                          >
                             {c.body}
-                          </p>
+                          </button>
 
                           <div className="mt-5 flex flex-wrap items-center gap-6 border-t border-theme pt-4">
                             <button
@@ -694,16 +743,36 @@ function ConfessionsSection({ variant = 'default' }) {
         onCancel={() => setConfirmDelete(null)}
       />
 
-      <ConfirmModal
-        open={!!confirmReport}
-        title="Reportar publicacion"
-        message="Al reportar, un administrador revisara el contenido. Abuso del reporte puede resultar en sanciones."
-        confirmLabel="Reportar"
-        cancelLabel="Cancelar"
-        variant="warning"
-        onConfirm={() => handleReportPost(confirmReport?.id, confirmReport?.body)}
-        onCancel={() => setConfirmReport(null)}
-      />
+      {confirmReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="card-utp w-full max-w-md p-6 border border-theme rounded-2xl shadow-2xl animate-modal-in" style={{ background: 'var(--color-card-solid)', backdropFilter: 'none' }}>
+            <h3 className="text-base font-black text-theme text-center mb-4">Reportar publicacion</h3>
+            <form onSubmit={(e) => { e.preventDefault(); handleReportPost(confirmReport.id, reportReason); }}>
+              <label className="block text-xs font-bold text-theme-muted uppercase tracking-wider mb-2">
+                Motivo del reporte
+              </label>
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="Explica por que reportas esta publicacion..."
+                className="input-utp w-full text-sm resize-none"
+                rows={4}
+                minLength={10}
+                required
+              />
+              <p className="text-[10px] text-theme-muted mt-1 mb-4">Minimo 10 caracteres.</p>
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={() => { setConfirmReport(null); setReportReason(''); }} className="btn-utp-secondary px-4 py-2 text-sm">
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-utp-primary px-4 py-2 text-sm font-bold" disabled={reportReason.trim().length < 10}>
+                  Reportar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {editingConfession && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -728,6 +797,13 @@ function ConfessionsSection({ variant = 'default' }) {
             </form>
           </div>
         </div>
+      )}
+
+      {selectedConfession && (
+        <ConfessionModal
+          confession={selectedConfession}
+          onClose={() => setSelectedConfession(null)}
+        />
       )}
     </section>
   );

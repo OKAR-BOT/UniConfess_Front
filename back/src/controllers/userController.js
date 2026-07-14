@@ -1,5 +1,9 @@
 const db = require('../models');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
+const { notifyUser } = require('../realtime/socket');
+const uploadDir = path.join(__dirname, '..', '..', 'uploads');
 
 const getAllUsers = async (req, res) => {
   try {
@@ -101,6 +105,11 @@ const updateUserRole = async (req, res) => {
     }
     user.role = role;
     await user.save();
+    notifyUser(user.id, {
+      type: 'role_changed',
+      newRole: role,
+      target: user.id,
+    });
     const { passwordHash: _, ...publicUser } = user.toJSON();
     res.status(200).json(publicUser);
   } catch (err) {
@@ -135,6 +144,11 @@ const setUserPremium = async (req, res) => {
     user.role = 'premium';
     user.membershipExpiresAt = membershipExpiresAt || new Date(Date.now() + 365 * 86400000).toISOString();
     await user.save();
+    notifyUser(user.id, {
+      type: 'role_changed',
+      newRole: 'premium',
+      target: user.id,
+    });
     const { passwordHash: _, ...publicUser } = user.toJSON();
     res.status(200).json(publicUser);
   } catch (err) {
@@ -151,6 +165,20 @@ const getProfileByHandle = async (req, res) => {
     });
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    if (req.userId) {
+      const blockedByOwner = await db.Block.findOne({
+        where: { blockerId: user.id, blockedId: req.userId },
+      });
+      if (blockedByOwner) {
+        return res.status(403).json({ message: 'No puedes ver este perfil.' });
+      }
+      const blockedByViewer = await db.Block.findOne({
+        where: { blockerId: req.userId, blockedId: user.id },
+      });
+      if (blockedByViewer) {
+        return res.status(403).json({ message: 'No puedes ver este perfil.' });
+      }
     }
     const confCount = await db.Confession.count({ where: { userId: user.id } });
     const commentCount = await db.Comment.count({ where: { userId: user.id } });
@@ -170,6 +198,20 @@ const getUserConfessions = async (req, res) => {
     const user = await db.User.findOne({ where: { handle: handle.toLowerCase() } });
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    if (req.userId) {
+      const blockedByOwner = await db.Block.findOne({
+        where: { blockerId: user.id, blockedId: req.userId },
+      });
+      if (blockedByOwner) {
+        return res.status(403).json({ message: 'No puedes ver este perfil.' });
+      }
+      const blockedByViewer = await db.Block.findOne({
+        where: { blockerId: req.userId, blockedId: user.id },
+      });
+      if (blockedByViewer) {
+        return res.status(403).json({ message: 'No puedes ver este perfil.' });
+      }
     }
     const isOwner = req.userId && req.userId === user.id;
     const isAdmin = req.userRole === 'admin';
@@ -219,6 +261,9 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const IMAGE_SERVICE_URL = process.env.IMAGE_SERVICE_URL || 'https://core.geozns.com';
+const IMAGE_API_KEY = process.env.IMAGE_API_KEY || 'ffafa7297328766a9ebac0bb7c27a1f6a5c42a7f69ebc03ec4ca2177864a6d09';
+
 const uploadAvatar = async (req, res) => {
   try {
     const { handle } = req.params;
@@ -235,11 +280,55 @@ const uploadAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'Debes seleccionar una imagen.' });
     }
-    user.avatarUrl = `/uploads/${req.file.filename}`;
+
+    const originalPath = req.file.path;
+    const fileBuffer = await fs.promises.readFile(originalPath);
+
+    const formData = new FormData();
+    const blob = new Blob([fileBuffer], { type: req.file.mimetype });
+    formData.append('file', blob, req.file.filename);
+
+    const compressRes = await fetch(`${IMAGE_SERVICE_URL}/v1/image/preset?preset=avatar_md`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${IMAGE_API_KEY}`,
+      },
+      body: formData,
+    });
+
+    let savedFilename;
+    if (!compressRes.ok) {
+      const errText = await compressRes.text().catch(() => 'unknown');
+      console.error(`[avatar] Image service returned ${compressRes.status}: ${errText}`);
+      const ext = path.extname(req.file.originalname) || '.jpg';
+      savedFilename = `avatar-${req.userId}-${Date.now()}${ext}`;
+      const fallbackPath = path.join(uploadDir, savedFilename);
+      await fs.promises.copyFile(originalPath, fallbackPath);
+      await fs.promises.unlink(originalPath);
+    } else {
+      const arrayBuffer = await compressRes.arrayBuffer();
+      const compressedBuffer = Buffer.from(arrayBuffer);
+      savedFilename = `avatar-${req.userId}-${Date.now()}.webp`;
+      const webpPath = path.join(uploadDir, savedFilename);
+      await fs.promises.writeFile(webpPath, compressedBuffer);
+      await fs.promises.unlink(originalPath);
+    }
+
+    if (user.avatarUrl) {
+      const oldPath = path.join(uploadDir, path.basename(user.avatarUrl));
+      try {
+        await fs.promises.unlink(oldPath);
+      } catch (_) {
+        // ignore if old file doesn't exist
+      }
+    }
+
+    user.avatarUrl = `/uploads/${savedFilename}`;
     await user.save();
     const { passwordHash: _, ...publicUser } = user.toJSON();
     res.status(200).json(publicUser);
   } catch (err) {
+    console.error('[avatar] Upload error:', err.message);
     res.status(500).json({ message: 'Error al subir avatar', error: err.message });
   }
 };

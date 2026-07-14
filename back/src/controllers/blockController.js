@@ -2,6 +2,9 @@ const db = require('../models');
 
 const blockUser = async (req, res) => {
   try {
+    if (req.userRole !== 'premium' && req.userRole !== 'admin') {
+      return res.status(403).json({ message: 'Solo usuarios premium pueden bloquear.' });
+    }
     const { blockedId } = req.body;
     if (!blockedId) {
       return res.status(400).json({ message: 'blockedId es requerido.' });
