@@ -10,7 +10,7 @@ router.post('/', userController.createUser);
 router.post('/login', userController.loginUser);
 router.post('/:userId/confessions', verifyToken, userController.postConfession);
 router.get('/confessions', userController.getAllConfessions);
-router.get('/profile/:handle', userController.getProfileByHandle);
+router.get('/profile/:handle', optionalAuth, userController.getProfileByHandle);
 router.get('/profile/:handle/confessions', optionalAuth, userController.getUserConfessions);
 router.put('/profile/:handle', verifyToken, userController.updateProfile);
 router.put('/:id/role', verifyToken, authorize('admin'), userController.updateUserRole);
